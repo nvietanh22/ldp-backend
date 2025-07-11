@@ -14,8 +14,10 @@ import vn.lottefinance.landingpage.dto.CustomerInfoRequestDto;
 import vn.lottefinance.landingpage.dto.DataDto;
 import vn.lottefinance.landingpage.dto.InviteInfo;
 import vn.lottefinance.landingpage.dto.ResponseDto;
+import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.enums.ChannelEnum;
 import vn.lottefinance.landingpage.enums.OtpVerifyStatusEnum;
+import vn.lottefinance.landingpage.exception.CustomedBadRequestException;
 import vn.lottefinance.landingpage.properties.EsbProperties;
 import vn.lottefinance.landingpage.services.CacheService;
 import vn.lottefinance.landingpage.utils.SSLSocketUtil;
@@ -46,6 +48,24 @@ public class EsbWareHouseClient {
     @Value("${api.password}")
     private String esbPass;
 
+    @Value("${card.baseUrl}")
+    private String cardUrl;
+
+    @Value("${card.endpoint.checkExit}")
+    private String checkExitService;
+
+    @Value("${card.endpoint.upsertPhoneToken}")
+    private String upsertPhoneTokenService;
+
+    @Value("${card.endpoint.findPhoneAndToken}")
+    private String findPhoneAndTokenService;
+
+    @Value("${card.endpoint.findFirstStatusBrandPrice}")
+    private String findFirstStatusBrandPriceService;
+
+    @Value("${card.endpoint.upsertMobileCard}")
+    private String upsertMobileCardService;
+
     @Autowired
     private CacheService cacheService;
 
@@ -58,10 +78,7 @@ public class EsbWareHouseClient {
             @Override
             public Response intercept(Chain chain) throws IOException {
                 Request original = chain.request();
-                Request.Builder requestBuilder = original.newBuilder()
-                        .header("User-Agent", "Mozilla/5.0")
-                        .header("Accept-Language", "en-US,en;q=0.5")
-                        .header("Authorization", Credentials.basic(esbUser, esbPass));
+                Request.Builder requestBuilder = original.newBuilder().header("User-Agent", "Mozilla/5.0").header("Accept-Language", "en-US,en;q=0.5").header("Authorization", Credentials.basic(esbUser, esbPass));
                 Request request = requestBuilder.build();
                 return chain.proceed(request);
             }
@@ -77,10 +94,8 @@ public class EsbWareHouseClient {
         if (dto.getInviteList() != null) {
             try {
                 ObjectMapper mapper = new ObjectMapper();
-                List<InviteInfo> inviteInfos = mapper.readValue(
-                        dto.getInviteList(),
-                        new TypeReference<List<InviteInfo>>() {}
-                );
+                List<InviteInfo> inviteInfos = mapper.readValue(dto.getInviteList(), new TypeReference<List<InviteInfo>>() {
+                });
                 for (InviteInfo invite : inviteInfos) {
                     log.info("Invite: {} - {}", invite.getName(), invite.getPhone());
                 }
@@ -88,15 +103,15 @@ public class EsbWareHouseClient {
                 String inviteJson = mapper.writeValueAsString(inviteInfos);
                 log.info("Converted InviteList to JSON: {}", inviteJson);
 
-                 dto.setInviteList(inviteJson);
+                dto.setInviteList(inviteJson);
 
             } catch (IOException e) {
-                throw new RuntimeException("Invalid inviteList JSON", e);
+                throw new CustomedBadRequestException("Invalid inviteList JSON", e);
             }
         }
         customerInfoRequestDto.setData(dto);
         ResponseDto responseDto = new ResponseDto();
-        if (channel != ChannelEnum.LOAN7.getVal()){
+        if (channel != ChannelEnum.LOAN7.getVal()) {
             ResponseDto idValidationResult = validateVietnameseID(dto.getIdCard());
             if (!"Success".equals(idValidationResult.getRslt_msg())) {
                 return idValidationResult;
@@ -111,24 +126,20 @@ public class EsbWareHouseClient {
         try {
             jsonRequestBody = objectMapper.writeValueAsString(customerInfoRequestDto);
         } catch (IOException e) {
-            throw new RuntimeException("Error serializing DTO", e);
+            throw new CustomedBadRequestException("Error serializing DTO", e);
         }
-        if (channel != ChannelEnum.LOAN7.getVal()){
+        if (channel != ChannelEnum.LOAN7.getVal()) {
             String key = String.format("%s_%s", dto.getPhoneNumber(), dto.getIdCard());
             log.info("putInCache: {}", key);
             cacheService.putInCache(key, OtpVerifyStatusEnum.DONE.getVal());
-        }
-        else {
+        } else {
             String key = String.format("%s_%s", dto.getPhoneNumber(), channel);
             log.info("putInCache: {}", key);
             cacheService.putInCache(key, OtpVerifyStatusEnum.DONE.getVal());
         }
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
         String url = esbBaseUrl + inquiryService;
-        Request request = new Request.Builder()
-                .url(url)
-                .post(requestBody)
-                .build();
+        Request request = new Request.Builder().url(url).post(requestBody).build();
 
         try (Response response = okHttpClient.newCall(request).execute()) {
             String respone = response.body().string();
@@ -142,7 +153,7 @@ public class EsbWareHouseClient {
             }
             return responseDto;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new CustomedBadRequestException(e);
         }
     }
 
@@ -211,5 +222,171 @@ public class EsbWareHouseClient {
         responseDto.setRslt_msg("Success");
         responseDto.setReason_code("Hợp lệ.");
         return responseDto;
+    }
+
+    public String checkPhoneExitsOnlyData(CheckPhoneExitsRequestDTO phoneNumber) {
+        log.info("Start checkPhoneExitsOnlyData: {}", phoneNumber);
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(phoneNumber);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + checkExitService;
+        log.info("URL: {}", url);
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("REQUEST : {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            log.info("RESPONSE : {}", respone);
+
+            JSONObject jsonObject = new JSONObject(respone);
+
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return data != null ? data.toString() : "{}";
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
+
+    public String findFirstByBrandAndPriceAndStatus(FindFirstByBrandAndPriceAndStatusRequestDTO requestDTO) {
+        log.info("Start findFirstByBrandAndPriceAndStatus: {}", requestDTO);
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(requestDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + findFirstStatusBrandPriceService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST : {}", request);
+
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE : {}", respone);
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return data != null ? data.toString() : "{}";
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
+
+    public String findPhoneToken(FindPhoneAndTokenRequestDTO requestDTO) {
+        log.info("Start findPhoneToken: {}", requestDTO);
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(requestDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + findPhoneAndTokenService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST: {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE: {}", respone);
+
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return data != null ? data.toString() : "{}";
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
+
+    public String upsertMobileCard(MobileCardRequestDTO requestDTO) {
+        log.info("Start upsertMobileCard: {}", requestDTO);
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(requestDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + upsertMobileCardService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST: {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE: {}", respone);
+
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return data != null ? data.toString() : "{}";
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
+
+    public String upsertPhoneToken(PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO) {
+        log.info("Start upsertPhoneToken: {}", phoneVerifyTokenRequestDTO);
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(phoneVerifyTokenRequestDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + upsertPhoneTokenService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST: {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE: {}", response);
+
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return data != null ? data.toString() : "{}";
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
     }
 }
