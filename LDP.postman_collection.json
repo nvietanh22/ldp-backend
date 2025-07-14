@@ -1,0 +1,1568 @@
+{
+	"info": {
+		"_postman_id": "ed84db87-3591-47c4-82dc-cd5308bca2be",
+		"name": "LDP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15574045"
+	},
+	"item": [
+		{
+			"name": "Create consent public",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Random name components\r",
+							"const firstNames = [\"Việt\", \"Anh\", \"Minh\", \"Ngọc\", \"Huy\", \"Trang\", \"Tuấn\", \"Lan\", \"Dũng\", \"Hà\"];\r",
+							"const lastNames = [\"Nguyễn\", \"Trần\", \"Lê\", \"Phạm\", \"Hoàng\", \"Phan\", \"Vũ\", \"Đặng\", \"Bùi\", \"Đỗ\"];\r",
+							"\r",
+							"// Random ID card: 12 digits\r",
+							"const idCardNumber = Math.floor(100000000000 + Math.random() * 900000000000).toString();\r",
+							"\r",
+							"// Random phone number: start with 09 + 8 digits\r",
+							"const phoneNumber = '09' + Math.floor(100000000 + Math.random() * 900000000).toString();\r",
+							"\r",
+							"// Random full name\r",
+							"const customerName = `${lastNames[Math.floor(Math.random() * lastNames.length)]} ${firstNames[Math.floor(Math.random() * firstNames.length)]} ${firstNames[Math.floor(Math.random() * firstNames.length)]}`;\r",
+							"\r",
+							"// Set variables\r",
+							"pm.environment.set(\"random_idCardNumber\", idCardNumber);\r",
+							"pm.environment.set(\"random_phoneNumber\", phoneNumber);\r",
+							"pm.environment.set(\"random_customerName\", customerName);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"idCardNumber\": \"008099000111\",\n    \"phoneNumber\": \"0982941919\",\n    \"customerName\": \"Boooooo\",\n    \"email\": \"vian@gmail.com\",\n    \"channel\": \"LDP\",\n    \"consentOption\": [\n        {\n            \"optionId\": 94\n        }\n    ]\n}\n"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/pdms/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"pdms",
+						"create"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Create consent",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "api-key",
+								"value": "e59a98f73131b7f9823525a76c9c5072",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idCardNumber\": \"{{random_idCardNumber}}\",\n    \"phoneNumber\": \"{{random_phoneNumber}}\",\n    \"customerName\": \"{{random_customerName}}\",\n    \"channel\": \"LDP\",\n    \"consentOption\": [\n        {\n            \"optionId\": 91\n        }\n    ]\n}\n"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"add"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "648"
+						},
+						{
+							"key": "Date",
+							"value": "Fri, 06 Jun 2025 10:57:01 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-06-06T17:57:01.8701938\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"id\": 163,\n        \"customerName\": \"Bùi Tuấn Huy\",\n        \"idCardNumber\": \"163770908729\",\n        \"phoneNumber\": \"09940195987\",\n        \"email\": null,\n        \"statusNoti\": null,\n        \"sourceData\": null,\n        \"sourceStatusNoti\": null,\n        \"notiChannel\": null,\n        \"refId\": null,\n        \"cifNumber\": null,\n        \"notiContent\": null,\n        \"createdBy\": \"LDP\",\n        \"modifyBy\": \"LDP\",\n        \"createdDate\": \"2025-06-06T17:57:01.8415331\",\n        \"modifyDate\": \"2025-06-06T17:57:01.8415331\",\n        \"dob\": null,\n        \"channel\": \"LDP\",\n        \"issuedDate\": \"2025-06-06T17:57:01.8415331\",\n        \"issuedPlace\": null,\n        \"cusComment\": null,\n        \"reference\": null,\n        \"templateId\": 65,\n        \"consentLogs\": null,\n        \"status\": null\n    },\n    \"errors\": null\n}"
+				}
+			]
+		},
+		{
+			"name": "inquiry Public",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"023123444444\",\n    \"phoneNumber\": \"0362053112\",\n    \"channel\": \"LDP\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/pdms/inquiry",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"pdms",
+						"inquiry"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Khách hàng mới",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"008097001111\",\n    \"phoneNumber\": \"0982941111\",\n    \"channel\": \"LDP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/inquiry",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"inquiry"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "1202"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 29 May 2025 07:43:11 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-05-29T14:43:11.3678427\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"consentResult\": \"N\",\n        \"consentMetaData\": {\n            \"idCardNumber\": \"008097001111\",\n            \"phoneNumber\": \"0982941111\",\n            \"channel\": \"LDP\",\n            \"content\": \"<p>ldp content</p>\",\n            \"templateId\": 43,\n            \"listOption\": [\n                {\n                    \"code\": \"CTD001\",\n                    \"name\": \"Người dùng đồng ý cho phép sử dụng dữ liệu CCCD\",\n                    \"id\": 91\n                },\n                {\n                    \"code\": \"CTD002\",\n                    \"name\": \"Cho phép sử dụng địa chỉ email để liên hệ\",\n                    \"id\": 92\n                },\n                {\n                    \"code\": \"CTD003\",\n                    \"name\": \"Đồng ý chia sẻ số điện thoại cho đối tác\",\n                    \"id\": 93\n                },\n                {\n                    \"code\": \"CTD004\",\n                    \"name\": \"Đồng ý sử dụng hình ảnh cá nhân cho quảng cáo\",\n                    \"id\": 94\n                },\n                {\n                    \"code\": \"CTD005\",\n                    \"name\": \"Chấp thuận thu thập dữ liệu định vị GPS\",\n                    \"id\": 95\n                },\n                {\n                    \"code\": \"CTD006\",\n                    \"name\": \"Cho phép lưu trữ lịch sử truy cập hệ thống\",\n                    \"id\": 96\n                },\n                {\n                    \"code\": \"CTD007\",\n                    \"name\": \"Đồng ý chia sẻ thông tin tài khoản ngân hàng\",\n                    \"id\": 97\n                },\n                {\n                    \"code\": \"CTD008\",\n                    \"name\": \"Đồng ý nhận thông báo qua Zalo\",\n                    \"id\": 98\n                },\n                {\n                    \"code\": \"CTD009\",\n                    \"name\": \"Cho phép ghi âm cuộc gọi CSKH\",\n                    \"id\": 99\n                },\n                {\n                    \"code\": \"CTD010\",\n                    \"name\": \"Chấp thuận chia sẻ dữ liệu với bên thứ ba\",\n                    \"id\": 100\n                }\n            ]\n        },\n        \"customerInfo\": null\n    },\n    \"errors\": null\n}"
+				},
+				{
+					"name": "Đồng ý toàn phần",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"008097000166\",\n    \"phoneNumber\": \"0362051713\",\n    \"channel\": \"LDP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/inquiry",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"inquiry"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "929"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 29 May 2025 07:49:38 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-05-29T14:49:38.1736179\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"consentResult\": \"Y\",\n        \"consentMetaData\": null,\n        \"customerInfo\": {\n            \"content\": \"<p>ldp content</p>\",\n            \"customerName\": \"Việt Anh test PARTIAL\",\n            \"idCardNumber\": \"008097000166\",\n            \"phoneNumber\": \"0362051713\",\n            \"channel\": \"LDP\",\n            \"consentType\": \"TOTAL\",\n            \"createdDate\": \"2025-05-29T11:07:51.084057\",\n            \"templateId\": 43,\n            \"listOption\": [\n                {\n                    \"code\": \"CTD004\",\n                    \"name\": \"Đồng ý sử dụng hình ảnh cá nhân cho quảng cáo\",\n                    \"id\": 94\n                },\n                {\n                    \"code\": \"CTD005\",\n                    \"name\": \"Chấp thuận thu thập dữ liệu định vị GPS\",\n                    \"id\": 95\n                },\n                {\n                    \"code\": \"CTD006\",\n                    \"name\": \"Cho phép lưu trữ lịch sử truy cập hệ thống\",\n                    \"id\": 96\n                },\n                {\n                    \"code\": \"CTD007\",\n                    \"name\": \"Đồng ý chia sẻ thông tin tài khoản ngân hàng\",\n                    \"id\": 97\n                },\n                {\n                    \"code\": \"CTD008\",\n                    \"name\": \"Đồng ý nhận thông báo qua Zalo\",\n                    \"id\": 98\n                },\n                {\n                    \"code\": \"CTD009\",\n                    \"name\": \"Cho phép ghi âm cuộc gọi CSKH\",\n                    \"id\": 99\n                }\n            ]\n        }\n    },\n    \"errors\": null\n}"
+				},
+				{
+					"name": "1 Phần",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"008097000166\",\n    \"phoneNumber\": \"0982941919\",\n    \"channel\": \"LDP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/inquiry",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"inquiry"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "918"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 29 May 2025 07:50:27 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-05-29T14:50:27.5870812\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"consentResult\": \"Y\",\n        \"consentMetaData\": null,\n        \"customerInfo\": {\n            \"content\": \"<p>ldp content</p>\",\n            \"customerName\": \"Việt Anh\",\n            \"idCardNumber\": \"008097000166\",\n            \"phoneNumber\": \"0982941919\",\n            \"channel\": \"LDP\",\n            \"consentType\": \"PARTIAL\",\n            \"createdDate\": \"2025-05-29T11:01:21.568923\",\n            \"templateId\": 43,\n            \"listOption\": [\n                {\n                    \"code\": \"CTD004\",\n                    \"name\": \"Đồng ý sử dụng hình ảnh cá nhân cho quảng cáo\",\n                    \"id\": 94\n                },\n                {\n                    \"code\": \"CTD005\",\n                    \"name\": \"Chấp thuận thu thập dữ liệu định vị GPS\",\n                    \"id\": 95\n                },\n                {\n                    \"code\": \"CTD006\",\n                    \"name\": \"Cho phép lưu trữ lịch sử truy cập hệ thống\",\n                    \"id\": 96\n                },\n                {\n                    \"code\": \"CTD007\",\n                    \"name\": \"Đồng ý chia sẻ thông tin tài khoản ngân hàng\",\n                    \"id\": 97\n                },\n                {\n                    \"code\": \"CTD008\",\n                    \"name\": \"Đồng ý nhận thông báo qua Zalo\",\n                    \"id\": 98\n                },\n                {\n                    \"code\": \"CTD009\",\n                    \"name\": \"Cho phép ghi âm cuộc gọi CSKH\",\n                    \"id\": 99\n                }\n            ]\n        }\n    },\n    \"errors\": null\n}"
+				}
+			]
+		},
+		{
+			"name": "Send notice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"idCardNumber\": \"008099000122\",\n    \"phoneNumber\": \"0982941919\",\n    \"customerName\": \"Boooooo\",\n    \"channel\": \"LDP\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/pdms/send-notice",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"pdms",
+						"send-notice"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Khách hàng mới",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"008097001111\",\n    \"phoneNumber\": \"0982941111\",\n    \"channel\": \"LDP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/inquiry",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"inquiry"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "1202"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 29 May 2025 07:43:11 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-05-29T14:43:11.3678427\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"consentResult\": \"N\",\n        \"consentMetaData\": {\n            \"idCardNumber\": \"008097001111\",\n            \"phoneNumber\": \"0982941111\",\n            \"channel\": \"LDP\",\n            \"content\": \"<p>ldp content</p>\",\n            \"templateId\": 43,\n            \"listOption\": [\n                {\n                    \"code\": \"CTD001\",\n                    \"name\": \"Người dùng đồng ý cho phép sử dụng dữ liệu CCCD\",\n                    \"id\": 91\n                },\n                {\n                    \"code\": \"CTD002\",\n                    \"name\": \"Cho phép sử dụng địa chỉ email để liên hệ\",\n                    \"id\": 92\n                },\n                {\n                    \"code\": \"CTD003\",\n                    \"name\": \"Đồng ý chia sẻ số điện thoại cho đối tác\",\n                    \"id\": 93\n                },\n                {\n                    \"code\": \"CTD004\",\n                    \"name\": \"Đồng ý sử dụng hình ảnh cá nhân cho quảng cáo\",\n                    \"id\": 94\n                },\n                {\n                    \"code\": \"CTD005\",\n                    \"name\": \"Chấp thuận thu thập dữ liệu định vị GPS\",\n                    \"id\": 95\n                },\n                {\n                    \"code\": \"CTD006\",\n                    \"name\": \"Cho phép lưu trữ lịch sử truy cập hệ thống\",\n                    \"id\": 96\n                },\n                {\n                    \"code\": \"CTD007\",\n                    \"name\": \"Đồng ý chia sẻ thông tin tài khoản ngân hàng\",\n                    \"id\": 97\n                },\n                {\n                    \"code\": \"CTD008\",\n                    \"name\": \"Đồng ý nhận thông báo qua Zalo\",\n                    \"id\": 98\n                },\n                {\n                    \"code\": \"CTD009\",\n                    \"name\": \"Cho phép ghi âm cuộc gọi CSKH\",\n                    \"id\": 99\n                },\n                {\n                    \"code\": \"CTD010\",\n                    \"name\": \"Chấp thuận chia sẻ dữ liệu với bên thứ ba\",\n                    \"id\": 100\n                }\n            ]\n        },\n        \"customerInfo\": null\n    },\n    \"errors\": null\n}"
+				},
+				{
+					"name": "Đồng ý toàn phần",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"008097000166\",\n    \"phoneNumber\": \"0362051713\",\n    \"channel\": \"LDP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/inquiry",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"inquiry"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "929"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 29 May 2025 07:49:38 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-05-29T14:49:38.1736179\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"consentResult\": \"Y\",\n        \"consentMetaData\": null,\n        \"customerInfo\": {\n            \"content\": \"<p>ldp content</p>\",\n            \"customerName\": \"Việt Anh test PARTIAL\",\n            \"idCardNumber\": \"008097000166\",\n            \"phoneNumber\": \"0362051713\",\n            \"channel\": \"LDP\",\n            \"consentType\": \"TOTAL\",\n            \"createdDate\": \"2025-05-29T11:07:51.084057\",\n            \"templateId\": 43,\n            \"listOption\": [\n                {\n                    \"code\": \"CTD004\",\n                    \"name\": \"Đồng ý sử dụng hình ảnh cá nhân cho quảng cáo\",\n                    \"id\": 94\n                },\n                {\n                    \"code\": \"CTD005\",\n                    \"name\": \"Chấp thuận thu thập dữ liệu định vị GPS\",\n                    \"id\": 95\n                },\n                {\n                    \"code\": \"CTD006\",\n                    \"name\": \"Cho phép lưu trữ lịch sử truy cập hệ thống\",\n                    \"id\": 96\n                },\n                {\n                    \"code\": \"CTD007\",\n                    \"name\": \"Đồng ý chia sẻ thông tin tài khoản ngân hàng\",\n                    \"id\": 97\n                },\n                {\n                    \"code\": \"CTD008\",\n                    \"name\": \"Đồng ý nhận thông báo qua Zalo\",\n                    \"id\": 98\n                },\n                {\n                    \"code\": \"CTD009\",\n                    \"name\": \"Cho phép ghi âm cuộc gọi CSKH\",\n                    \"id\": 99\n                }\n            ]\n        }\n    },\n    \"errors\": null\n}"
+				},
+				{
+					"name": "1 Phần",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cifNumber\": \"string\",\n    \"idCardNumber\": \"008097000166\",\n    \"phoneNumber\": \"0982941919\",\n    \"channel\": \"LDP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/pdms-core/api/public/notice/inquiry",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pdms-core",
+								"api",
+								"public",
+								"notice",
+								"inquiry"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "918"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 29 May 2025 07:50:27 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"timestamp\": \"2025-05-29T14:50:27.5870812\",\n    \"status\": 200,\n    \"code\": \"200\",\n    \"message\": \"success\",\n    \"data\": {\n        \"consentResult\": \"Y\",\n        \"consentMetaData\": null,\n        \"customerInfo\": {\n            \"content\": \"<p>ldp content</p>\",\n            \"customerName\": \"Việt Anh\",\n            \"idCardNumber\": \"008097000166\",\n            \"phoneNumber\": \"0982941919\",\n            \"channel\": \"LDP\",\n            \"consentType\": \"PARTIAL\",\n            \"createdDate\": \"2025-05-29T11:01:21.568923\",\n            \"templateId\": 43,\n            \"listOption\": [\n                {\n                    \"code\": \"CTD004\",\n                    \"name\": \"Đồng ý sử dụng hình ảnh cá nhân cho quảng cáo\",\n                    \"id\": 94\n                },\n                {\n                    \"code\": \"CTD005\",\n                    \"name\": \"Chấp thuận thu thập dữ liệu định vị GPS\",\n                    \"id\": 95\n                },\n                {\n                    \"code\": \"CTD006\",\n                    \"name\": \"Cho phép lưu trữ lịch sử truy cập hệ thống\",\n                    \"id\": 96\n                },\n                {\n                    \"code\": \"CTD007\",\n                    \"name\": \"Đồng ý chia sẻ thông tin tài khoản ngân hàng\",\n                    \"id\": 97\n                },\n                {\n                    \"code\": \"CTD008\",\n                    \"name\": \"Đồng ý nhận thông báo qua Zalo\",\n                    \"id\": 98\n                },\n                {\n                    \"code\": \"CTD009\",\n                    \"name\": \"Cho phép ghi âm cuộc gọi CSKH\",\n                    \"id\": 99\n                }\n            ]\n        }\n    },\n    \"errors\": null\n}"
+				}
+			]
+		},
+		{
+			"name": "Import list card",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data",
+						"disabled": true
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/D:/BRD/LDP/LP_2025_30_LandingPage_MKT/test1.xlsx"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/mobile-cards/import",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"mobile-cards",
+						"import"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get card",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"brand\": \"Viettel\",\n    \"phoneNumber\": \"0982941919\",\n    \"price\": \"100000\",\n    \"token\": \"f20kyzVi-f8xFtZbIygNW07Z4n04hH2l0jmnmbb3T6o\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/mobile-cards/get-card",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"mobile-cards",
+						"get-card"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Lấy thông tin thẻ thất bại do sai token",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"value": "Dejwak-mevped-8zoffi",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"brand\": \"Viettel\",\n    \"phoneNumber\": \"0982941919\",\n    \"price\": \"100000\",\n    \"token\": \"f20kyzVi-f8xFtZbIygNW07Z4n04hH2l0jmnmbb3T6o\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/mobile-cards/get-card",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"mobile-cards",
+								"get-card"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "JSESSIONID=B87BF92B34FBB848035F3EC9B82C12DB; Path=/; HttpOnly"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 14 Jul 2025 03:16:31 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"Token is invalid or has expired\"\n}"
+				},
+				{
+					"name": "Lấy thông tin thẻ thành công",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"value": "Dejwak-mevped-8zoffi",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"brand\": \"Viettel\",\n    \"phoneNumber\": \"0902466924\",\n    \"price\": \"10000\",\n    \"token\": \"token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/mobile-cards/get-card",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"mobile-cards",
+								"get-card"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "JSESSIONID=7C6219D98768054AC1EF81FA4A7A27E7; Path=/; HttpOnly"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 14 Jul 2025 03:29:07 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"cardNumber\": \"VCHAE2HJNBM\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Create",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Hàm random chuỗi\r",
+							"function randomString(length) {\r",
+							"    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';\r",
+							"    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');\r",
+							"}\r",
+							"\r",
+							"// Danh sách cố định\r",
+							"const brands = ['Mobifone', 'Vinaphone', 'Viettel', 'Vietnamobile'];\r",
+							"const products = ['Nạp thẻ điện thoại', 'Voucher GotIt', 'Thẻ cào điện thoại', 'Mã giảm giá Momo'];\r",
+							"const prices = ['100000', '200000', '50000', '100000'];\r",
+							"\r",
+							"const now = new Date();\r",
+							"const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');\r",
+							"\r",
+							"const partnerCode = 'PARTNER_' + randomString(6);\r",
+							"const voucherSerial = 'VC_' + yyyyMMdd + '_' + randomString(4);\r",
+							"const productName = products[Math.floor(Math.random() * products.length)];\r",
+							"const brand = brands[Math.floor(Math.random() * brands.length)];\r",
+							"const price = prices[Math.floor(Math.random() * prices.length)];\r",
+							"const link = 'https://c.gotit.vn/' + randomString(8);\r",
+							"\r",
+							"// Gán biến môi trường\r",
+							"pm.environment.set(\"partnerCode\", partnerCode);\r",
+							"pm.environment.set(\"voucherSerial\", voucherSerial);\r",
+							"pm.environment.set(\"productName\", productName);\r",
+							"pm.environment.set(\"brand\", brand);\r",
+							"pm.environment.set(\"price\", price);\r",
+							"pm.environment.set(\"link\", link);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"link\": \"{{link}}\",\n  \"name\": null,\n  \"sms\": null,\n  \"email\": null,\n  \"partnerCode\": \"{{partnerCode}}\",\n  \"gotitCode\": null,\n  \"voucherSerial\": \"{{voucherSerial}}\",\n  \"brand\": \"{{brand}}\",\n  \"productName\": \"{{productName}}\",\n  \"price\": \"{{price}}\",\n  \"issueDate\": null,\n  \"expiredDate\": null,\n  \"transactionRefId\": null,\n  \"poNumber\": null,\n  \"status\": \"ACTIVE\",\n  \"createdDate\": \"2025-07-01 14:45:48\",\n  \"phoneNumber\": null,\n  \"receivedDate\": null\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/mobile-cards/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"mobile-cards",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"request_id\": \"string\",\n  \"contact_number\": \"0982941919\",\n  \"national_id\": \"string\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/mobile-cards/verify",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"mobile-cards",
+						"verify"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Bạn đã tham gia chương trình rồi",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"value": "Dejwak-mevped-8zoffi",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"request_id\": \"string\",\n  \"contact_number\": \"0123456789\",\n  \"national_id\": \"string\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/mobile-cards/verify-phone",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"mobile-cards",
+								"verify-phone"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "JSESSIONID=35C8301B40FB1111DF10C63373936F0D; Path=/; HttpOnly"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 14 Jul 2025 03:32:25 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"Bạn đã tham gia chương trình rồi.\"\n}"
+				},
+				{
+					"name": "Khách hàng chưa tham gia chương trình",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"value": "Dejwak-mevped-8zoffi",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"request_id\": \"string\",\n    \"contact_number\": \"0123456222\",\n    \"national_id\": \"string\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/mobile-cards/verify-phone",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"mobile-cards",
+								"verify-phone"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Vary",
+							"value": "Origin"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Method"
+						},
+						{
+							"key": "Vary",
+							"value": "Access-Control-Request-Headers"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "JSESSIONID=36C8DCEFED0DDEC557F9DEDF57CAA1B2; Path=/; HttpOnly"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Cache-Control",
+							"value": "no-cache, no-store, max-age=0, must-revalidate"
+						},
+						{
+							"key": "Pragma",
+							"value": "no-cache"
+						},
+						{
+							"key": "Expires",
+							"value": "0"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 14 Jul 2025 03:34:39 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"request_id\": null,\n    \"rslt_cd\": null,\n    \"rslt_msg\": null,\n    \"reason_code\": null,\n    \"token\": \"JkUkimvuXDOF6Rv7jZaHcsxgSf4XURgZrY7g9QzfnMg\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Check Phone Number Exits",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "api-key",
+						"value": "Dejwak-mevped-8zoffi",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"phoneNumber\": \"0982941919\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/public/check-phone",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"public",
+						"check-phone"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
