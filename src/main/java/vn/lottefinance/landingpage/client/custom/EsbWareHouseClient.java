@@ -66,6 +66,9 @@ public class EsbWareHouseClient {
     @Value("${card.endpoint.upsertMobileCard}")
     private String upsertMobileCardService;
 
+    @Value("${card.endpoint.getActivePriceByBrand}")
+    private String getActivePriceByBrandService;
+
     @Autowired
     private CacheService cacheService;
 
@@ -374,6 +377,39 @@ public class EsbWareHouseClient {
         RequestBody requestBody = RequestBody.create(
                 MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
         String url = cardUrl + upsertPhoneTokenService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST: {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE: {}", response);
+
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return data != null ? data.toString() : "{}";
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
+
+    public String getActivePriceByBrandService(GetListCardActiveByBrandRequestDTO requestDTO) {
+        log.info("Start upsertPhoneToken: {}", requestDTO);
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(requestDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + getActivePriceByBrandService;
         Request request = new Request.Builder().url(url).post(requestBody).build();
         log.info("URL: {}", url);
         log.info("REQUEST: {}", request);

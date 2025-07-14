@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import vn.lottefinance.landingpage.client.custom.*;
 import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.enums.CardEnum;
@@ -20,7 +21,9 @@ import vn.lottefinance.landingpage.services.PhoneVerificationService;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,8 +56,7 @@ public class MobileCardServiceImpl implements MobileCardService {
 
     private final Loan01Client loan1Client;
 
-    @Autowired
-    private EsbWareHouseClient esbClient;
+    private final EsbWareHouseClient esbClient;
 
     @Override
     public GetMobileCardResponseDTO getCardNumber(GetMobileCardRequestDTO request) {
@@ -63,11 +65,7 @@ public class MobileCardServiceImpl implements MobileCardService {
             throw new CustomedBadRequestException("Token is invalid or has expired");
         }
 
-        FindFirstByBrandAndPriceAndStatusRequestDTO findDTO = FindFirstByBrandAndPriceAndStatusRequestDTO.builder()
-                .brand(request.getBrand())
-                .price(request.getPrice())
-                .status(CardEnum.ACTIVE.getStatus())
-                .build();
+        FindFirstByBrandAndPriceAndStatusRequestDTO findDTO = FindFirstByBrandAndPriceAndStatusRequestDTO.builder().brand(request.getBrand()).price(request.getPrice()).status(CardEnum.ACTIVE.getStatus()).build();
 
         String mobileCardJson = esbClient.findFirstByBrandAndPriceAndStatus(findDTO);
 
@@ -84,31 +82,13 @@ public class MobileCardServiceImpl implements MobileCardService {
             // Convert responseDTO -> requestDTO
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-            MobileCardRequestDTO requestDTO = MobileCardRequestDTO.builder()
-                    .link(responseDTO.getLink())
-                    .name(responseDTO.getName())
-                    .sms(responseDTO.getSms())
-                    .email(responseDTO.getEmail())
-                    .partnerCode(responseDTO.getPartnerCode())
-                    .gotitCode(responseDTO.getGotitCode())
-                    .voucherSerial(responseDTO.getVoucherSerial())
-                    .brand(request.getBrand())
-                    .productName(responseDTO.getProductName())
-                    .price(request.getPrice())
-                    .issueDate(formatDate(responseDTO.getIssueDate(), formatter))
-                    .expiredDate(formatDate(responseDTO.getExpiredDate(), formatter))
-                    .transactionRefId(responseDTO.getTransRefId())
-                    .poNumber(responseDTO.getPoNumber())
-                    .status(CardEnum.INACTIVE.getStatus())
-                    .phoneNumber(request.getPhoneNumber())
-                    .receivedDate(formatDate(new Date(), formatter))
-                    .build();
+            MobileCardRequestDTO requestDTO = MobileCardRequestDTO.builder().link(responseDTO.getLink()).name(responseDTO.getName()).sms(responseDTO.getSms()).email(responseDTO.getEmail()).partnerCode(responseDTO.getPartnerCode()).gotitCode(responseDTO.getGotitCode()).voucherSerial(responseDTO.getVoucherSerial()).brand(request.getBrand()).productName(responseDTO.getProductName()).price(request.getPrice()).issueDate(formatDate(responseDTO.getIssueDate(), formatter)).expiredDate(formatDate(responseDTO.getExpiredDate(), formatter)).transactionRefId(responseDTO.getTransRefId()).poNumber(responseDTO.getPoNumber()).status(CardEnum.INACTIVE.getStatus()) // Đánh dấu đã sử dụng
+                    .phoneNumber(request.getPhoneNumber()) // Gắn số điện thoại người nhận
+                    .receivedDate(formatDate(new Date(), formatter)).build();
 
             esbClient.upsertMobileCard(requestDTO);
 
-            return GetMobileCardResponseDTO.builder()
-                    .cardNumber(requestDTO.getVoucherSerial())
-                    .build();
+            return GetMobileCardResponseDTO.builder().cardNumber(requestDTO.getVoucherSerial()).build();
 
         } catch (Exception e) {
             throw new CustomedBadRequestException("Lỗi xử lý dữ liệu mobile card: " + e.getMessage());
@@ -116,36 +96,36 @@ public class MobileCardServiceImpl implements MobileCardService {
     }
 
 
-//
-//    @Override
-//    public void importMobileCardsFromExcel(MultipartFile file) throws Exception {
-//        if (file == null || file.isEmpty()) {
-//            throw new IllegalArgumentException("File không được để trống");
-//        }
-//
-//        List<MobileCard> cards = excelService.importFromExcel(file, MobileCard.class);
-//
-//        if (cards == null || cards.isEmpty()) {
-//            throw new IllegalArgumentException("File không có dữ liệu hợp lệ");
-//        }
-//
-//        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-//        for (MobileCard card : cards) {
-//            card.setStatus(CardEnum.ACTIVE.getStatus());
-//            card.setCreatedDate(now);
-//            if (card.getPrice() != null && !card.getPrice().isEmpty()) {
-//                try {
-//                    double parsedPrice = Double.parseDouble(card.getPrice());
-//                    long priceAsLong = (long) parsedPrice;
-//                    card.setPrice(String.valueOf(priceAsLong));
-//                } catch (NumberFormatException e) {
-//                    card.setPrice(card.getPrice().trim());
-//                }
-//            }
-//        }
-//
-//        repository.saveAll(cards);
-//    }
+    @Override
+    public void importMobileCardsFromExcel(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+
+        List<MobileCardRequestDTO> cards = excelService.importFromExcel(file, MobileCardRequestDTO.class);
+        if (cards == null || cards.isEmpty()) {
+            throw new IllegalArgumentException("File không có dữ liệu hợp lệ");
+        }
+
+        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        List<String> errorLogs = new ArrayList<>();
+
+        for (int i = 0; i < cards.size(); i++) {
+            MobileCardRequestDTO card = cards.get(i);
+            try {
+                prepareCard(card, now);
+                esbClient.upsertMobileCard(card);
+            } catch (Exception e) {
+                log.error("Lỗi khi xử lý bản ghi thứ {}: {}", i + 1, card, e);
+                errorLogs.add("Dòng " + (i + 1) + ": " + e.getMessage());
+            }
+        }
+
+        if (!errorLogs.isEmpty()) {
+            throw new CustomedBadRequestException("Có lỗi khi import:\n" + String.join("\n", errorLogs));
+        }
+    }
+
 
     @Override
     public ValidateResponseDTO sendValidate(ValidateRequestDTO req, String channel) throws JsonProcessingException {
@@ -208,7 +188,7 @@ public class MobileCardServiceImpl implements MobileCardService {
             throw ex;
         } catch (JSONException jsonEx) {
             log.error("Lỗi parse JSON response từ esbClient: {}", jsonEx.getMessage());
-            throw new RuntimeException("Lỗi xử lý dữ liệu từ hệ thống kiểm tra số điện thoại");
+            throw new CustomedBadRequestException("Lỗi xử lý dữ liệu từ hệ thống kiểm tra số điện thoại");
         }
 
         return response;
@@ -216,6 +196,22 @@ public class MobileCardServiceImpl implements MobileCardService {
 
     private String formatDate(Date date, SimpleDateFormat formatter) {
         return date != null ? formatter.format(date) : null;
+    }
+
+    private void prepareCard(MobileCardRequestDTO card, String createdDate) {
+        card.setStatus(CardEnum.ACTIVE.getStatus());
+        card.setCreatedDate(createdDate);
+
+        String rawPrice = card.getPrice();
+        if (rawPrice != null && !rawPrice.trim().isEmpty()) {
+            try {
+                double parsed = Double.parseDouble(rawPrice.trim());
+                card.setPrice(String.valueOf((long) parsed));
+            } catch (NumberFormatException e) {
+                // Giữ nguyên nếu không parse được nhưng loại bỏ khoảng trắng
+                card.setPrice(rawPrice.trim());
+            }
+        }
     }
 
 }

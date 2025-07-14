@@ -7,13 +7,10 @@ import vn.lottefinance.landingpage.dto.card.GetMobileCardResponseDTO;
 import vn.lottefinance.landingpage.dto.card.ValidateRequestDTO;
 import vn.lottefinance.landingpage.dto.card.ValidateResponseDTO;
 
-import java.util.List;
-import java.util.Optional;
-
 public interface MobileCardService {
-    GetMobileCardResponseDTO  getCardNumber(GetMobileCardRequestDTO request);
-//
-//    void importMobileCardsFromExcel(MultipartFile file) throws Exception;
+    GetMobileCardResponseDTO getCardNumber(GetMobileCardRequestDTO request);
+
+    void importMobileCardsFromExcel(MultipartFile file) throws Exception;
 
     ValidateResponseDTO sendValidate(ValidateRequestDTO request, String channel) throws JsonProcessingException;
 

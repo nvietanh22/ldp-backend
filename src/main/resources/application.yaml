@@ -9,23 +9,19 @@ spring:
     redis:
       host: localhost
       port: 6379
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:oracle:thin:@//10.252.116.83:1521/pdmsdb
-    username: pdms
-    password: HkAlF!pdmsDev()2o25
-    hikari:
-      poolName: Hikari
-      auto-commit: false
-      data-source-properties:
-        cachePrepStmts: true
-        prepStmtCacheSize: 250
-        prepStmtCacheSqlLimit: 2048
-        useServerPrepStmts: true
-    driver-class-name: oracle.jdbc.OracleDriver
+      password: aloaluale
 api:
-  baseUrl: https://10.252.116.84:7074
+  baseUrl: http://10.252.116.84:7074
   username: landingpage
   password: abc123
   endpoint:
     inquiry: /api-landing-page/v1/warehouse/process
+card:
+  baseUrl: http://10.252.116.84:7056/api-landing-page/v1
+  endpoint:
+    checkExit: /check-phone-exists
+    upsertPhoneToken: /upsert-phone-token
+    upsertMobileCard: /upsert-mobile-card
+    findPhoneAndToken: /find-phone-token
+    findFirstStatusBrandPrice: /find-first-status-brand-price
+    getActivePriceByBrand: /get-active-price-by-brand

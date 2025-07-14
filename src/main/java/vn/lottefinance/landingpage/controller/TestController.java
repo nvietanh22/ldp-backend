@@ -6,10 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.lottefinance.landingpage.client.custom.EsbWareHouseClient;
-import vn.lottefinance.landingpage.dto.card.CheckPhoneExitsRequestDTO;
-import vn.lottefinance.landingpage.dto.card.FindPhoneAndTokenRequestDTO;
-import vn.lottefinance.landingpage.dto.card.GetMobileCardRequestDTO;
-import vn.lottefinance.landingpage.dto.card.GetMobileCardResponseDTO;
+import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.services.CacheService;
 import vn.lottefinance.landingpage.services.MobileCardService;
 
@@ -64,5 +61,12 @@ public class TestController {
     public GetMobileCardResponseDTO getCardBy(@Valid @RequestBody GetMobileCardRequestDTO request) {
         return mobileCardService.getCardNumber(request);
     }
+
+    @PostMapping("/get-price")
+    @ResponseStatus(HttpStatus.OK)
+    public String getActivePriceByBrandService(@Valid @RequestBody GetListCardActiveByBrandRequestDTO request) {
+        return esbWareHouseClient.getActivePriceByBrandService(request);
+    }
+
 
 }
