@@ -1,6 +1,6 @@
 jasypt:
   encryptor:
-    password: 12341234
+    password: {PASSSSSS}
     property:
       prefix: "ENC("
       suffix: ")"
@@ -11,13 +11,13 @@ spring:
       port: 6379
       password: aloaluale
 api:
-  baseUrl: http://10.252.116.84:7074
-  username: landingpage
-  password: abc123
+  baseUrl: http://url/api-landing-page/v1
+  username: {username}
+  password: {password}
   endpoint:
     inquiry: /api-landing-page/v1/warehouse/process
 card:
-  baseUrl: http://10.252.116.84:7056/api-landing-page/v1
+  baseUrl: http://url/api-landing-page/v1
   endpoint:
     checkExit: /check-phone-exists
     upsertPhoneToken: /upsert-phone-token
