@@ -65,16 +65,30 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
             PhoneTokenResponseDTO response = objectMapper.readValue(json, PhoneTokenResponseDTO.class);
+
+            // 👉 Check nếu không tìm thấy dữ liệu phù hợp
+            if (response.getStatus() == 1 &&
+                    "Không tìm thấy dữ liệu phù hợp".equalsIgnoreCase(response.getMessage())) {
+                log.warn("Sai thông tin của khách hàng: {}", requestDTO);
+                return false;
+            }
+
+            Date createdAtDate = response.getCreatedAt();
+            Date expiredAtDate = response.getExpiredAt();
+
+            if (createdAtDate == null || expiredAtDate == null) {
+                throw new CustomedBadRequestException("Thiếu thông tin thời gian tạo hoặc hết hạn token.");
+            }
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-            LocalDateTime createdAt = response.getCreatedAt().toInstant()
+            LocalDateTime createdAt = createdAtDate.toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
 
-            LocalDateTime expiredAt = response.getExpiredAt().toInstant()
+            LocalDateTime expiredAt = expiredAtDate.toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-
 
             String formattedCreatedAt = createdAt.format(formatter);
             String formattedExpiredAt = expiredAt.format(formatter);
@@ -89,15 +103,16 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
 
             if (response.getStatus() == 0 &&
                     !response.isVerifyed() &&
-                    response.getExpiredAt() != null &&
-                    response.getExpiredAt().after(new Date())) {
-                esbWareHouseClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
+                    expiredAtDate.after(new Date())) {
 
+//                esbWareHouseClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
                 return true;
             }
+
         } catch (Exception e) {
             throw new CustomedBadRequestException(e.getMessage());
         }
+
 
         return false;
     }

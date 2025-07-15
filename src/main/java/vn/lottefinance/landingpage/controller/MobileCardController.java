@@ -33,11 +33,11 @@ public class MobileCardController {
         return service.getCardNumber(request);
     }
 
-    @PostMapping("/create-minigame-infor")
-    @ResponseStatus(HttpStatus.OK)
-    public GetMobileCardResponseDTO saveInformationMiniGame(@Valid @RequestBody GetMobileCardRequestDTO request) {
-        return service.getCardNumber(request);
-    }
+//    @PostMapping("/create-minigame-infor")
+//    @ResponseStatus(HttpStatus.OK)
+//    public GetMobileCardResponseDTO saveInformationMiniGame(@Valid @RequestBody GetMobileCardRequestDTO request) {
+//        return service.getCardNumber(request);
+//    }
 
     @PostMapping("/import")
     public ResponseEntity<String> importFromExcel(@RequestParam("file") MultipartFile file) {
@@ -52,10 +52,10 @@ public class MobileCardController {
 
     @PostMapping("/verify-phone")
     public ValidateResponseDTO sendValidate(@Valid @RequestBody ValidateRequestDTO req, HttpServletRequest request) throws JsonProcessingException {
-        String channel = channelService.processChannel(request.getHeader("referer"));
-        log.info("referer " + request.getHeader("referer"));
-        log.info("Channel sendValidate " + channel);
-        log.info("Start verify-phone: {}", req);
+//        String channel = channelService.processChannel(request.getHeader("referer"));
+//        log.info("referer " + request.getHeader("referer"));
+//        log.info("Channel sendValidate " + channel);
+//        log.info("Start verify-phone: {}", req);
 
         return service.sendValidate(req, "LOAN");
 //        return service.sendValidate(req, channel);

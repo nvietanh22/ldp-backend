@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -85,10 +84,22 @@ public class MobileCardServiceImpl implements MobileCardService {
             MobileCardRequestDTO requestDTO = MobileCardRequestDTO.builder().link(responseDTO.getLink()).name(responseDTO.getName()).sms(responseDTO.getSms()).email(responseDTO.getEmail()).partnerCode(responseDTO.getPartnerCode()).gotitCode(responseDTO.getGotitCode()).voucherSerial(responseDTO.getVoucherSerial()).brand(request.getBrand()).productName(responseDTO.getProductName()).price(request.getPrice()).issueDate(formatDate(responseDTO.getIssueDate(), formatter)).expiredDate(formatDate(responseDTO.getExpiredDate(), formatter)).transactionRefId(responseDTO.getTransRefId()).poNumber(responseDTO.getPoNumber()).status(CardEnum.INACTIVE.getStatus()) // Đánh dấu đã sử dụng
                     .phoneNumber(request.getPhoneNumber()) // Gắn số điện thoại người nhận
                     .receivedDate(formatDate(new Date(), formatter)).build();
+            
+            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
+                    .verified(1)
+                    .phoneNumber(request.getPhoneNumber())
+                    .token(request.getToken())
+                    .build();
+
+            esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
 
             esbClient.upsertMobileCard(requestDTO);
 
-            return GetMobileCardResponseDTO.builder().cardNumber(requestDTO.getVoucherSerial()).build();
+            return GetMobileCardResponseDTO.builder()
+                    .cardNumber(requestDTO.getVoucherSerial())
+                    .reason_code("0")
+                    .rslt_msg("Success")
+                    .build();
 
         } catch (Exception e) {
             throw new CustomedBadRequestException("Lỗi xử lý dữ liệu mobile card: " + e.getMessage());
