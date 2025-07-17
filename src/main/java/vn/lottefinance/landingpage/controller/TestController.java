@@ -1,7 +1,7 @@
 package vn.lottefinance.landingpage.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,16 +11,15 @@ import vn.lottefinance.landingpage.services.CacheService;
 import vn.lottefinance.landingpage.services.MobileCardService;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/public")
 public class TestController {
-    @Autowired
-    private CacheService cacheService;
+    private final CacheService cacheService;
 
-    @Autowired
-    private EsbWareHouseClient esbWareHouseClient;
+    private final EsbWareHouseClient esbWareHouseClient;
 
-    @Autowired
-    private MobileCardService mobileCardService;
+    private final MobileCardService mobileCardService;
+
     @GetMapping("/cache/put")
     public ResponseEntity<String> put(@RequestParam String key, @RequestParam String value) {
         cacheService.putInCache(key, value);

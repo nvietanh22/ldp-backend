@@ -23,4 +23,7 @@ public class ValidateResponseDTO {
 
     @SerializedName("token")
     private String token;
+
+    @SerializedName("status")
+    private int status; // 0 khách hàng cũ, 1 KH mới
 }

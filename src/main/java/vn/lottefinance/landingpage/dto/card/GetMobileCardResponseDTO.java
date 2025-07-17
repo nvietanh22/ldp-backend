@@ -1,6 +1,5 @@
 package vn.lottefinance.landingpage.dto.card;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

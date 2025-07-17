@@ -33,12 +33,6 @@ public class MobileCardController {
         return service.getCardNumber(request);
     }
 
-//    @PostMapping("/create-minigame-infor")
-//    @ResponseStatus(HttpStatus.OK)
-//    public GetMobileCardResponseDTO saveInformationMiniGame(@Valid @RequestBody GetMobileCardRequestDTO request) {
-//        return service.getCardNumber(request);
-//    }
-
     @PostMapping("/import")
     public ResponseEntity<String> importFromExcel(@RequestParam("file") MultipartFile file) {
         try {

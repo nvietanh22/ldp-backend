@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.dao.DataAccessException;
@@ -13,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.lottefinance.landingpage.client.custom.*;
 import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.enums.CardEnum;
+import vn.lottefinance.landingpage.enums.ChannelEnum;
 import vn.lottefinance.landingpage.exception.CustomedBadRequestException;
 import vn.lottefinance.landingpage.services.ExcelService;
 import vn.lottefinance.landingpage.services.MobileCardService;
@@ -84,22 +87,14 @@ public class MobileCardServiceImpl implements MobileCardService {
             MobileCardRequestDTO requestDTO = MobileCardRequestDTO.builder().link(responseDTO.getLink()).name(responseDTO.getName()).sms(responseDTO.getSms()).email(responseDTO.getEmail()).partnerCode(responseDTO.getPartnerCode()).gotitCode(responseDTO.getGotitCode()).voucherSerial(responseDTO.getVoucherSerial()).brand(request.getBrand()).productName(responseDTO.getProductName()).price(request.getPrice()).issueDate(formatDate(responseDTO.getIssueDate(), formatter)).expiredDate(formatDate(responseDTO.getExpiredDate(), formatter)).transactionRefId(responseDTO.getTransRefId()).poNumber(responseDTO.getPoNumber()).status(CardEnum.INACTIVE.getStatus()) // Đánh dấu đã sử dụng
                     .phoneNumber(request.getPhoneNumber()) // Gắn số điện thoại người nhận
                     .receivedDate(formatDate(new Date(), formatter)).build();
-            
-            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
-                    .verified(1)
-                    .phoneNumber(request.getPhoneNumber())
-                    .token(request.getToken())
-                    .build();
+
+            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder().verified(1).phoneNumber(request.getPhoneNumber()).token(request.getToken()).build();
 
             esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
 
             esbClient.upsertMobileCard(requestDTO);
 
-            return GetMobileCardResponseDTO.builder()
-                    .cardNumber(requestDTO.getVoucherSerial())
-                    .reason_code("0")
-                    .rslt_msg("Success")
-                    .build();
+            return GetMobileCardResponseDTO.builder().cardNumber(requestDTO.getVoucherSerial()).reason_code("0").rslt_msg("Success").build();
 
         } catch (Exception e) {
             throw new CustomedBadRequestException("Lỗi xử lý dữ liệu mobile card: " + e.getMessage());
@@ -147,8 +142,9 @@ public class MobileCardServiceImpl implements MobileCardService {
         ValidateResponseDTO response = new ValidateResponseDTO();
 //
 //        // Gửi validate tới đúng client theo channel
-//        if (StringUtils.isEmpty(channel) || channel.equals(ChannelEnum.CARD.getVal())) {
-//            response = (ValidateResponseDTO) cardClient.sendValidate(req, ValidateResponseDTO.class);
+        if (StringUtils.isEmpty(channel) || channel.equals(ChannelEnum.CARD.getVal())) {
+            response = (ValidateResponseDTO) cardClient.sendValidate(req, ValidateResponseDTO.class);
+        }
 //        } else if (channel.equals(ChannelEnum.PLCC.getVal())) {
 //            response = (ValidateResponseDTO) plccClient.sendValidate(req, ValidateResponseDTO.class);
 //        } else if (channel.equals(ChannelEnum.PS.getVal())) {
@@ -178,18 +174,38 @@ public class MobileCardServiceImpl implements MobileCardService {
         try {
             CheckPhoneExitsRequestDTO checkPhoneDto = new CheckPhoneExitsRequestDTO(req.getContact_number());
             String res = esbClient.checkPhoneExitsOnlyData(checkPhoneDto);
-
             JSONObject jsonObject = new JSONObject(res);
-            int status = jsonObject.optInt("status");
+
             String message = jsonObject.optString("message");
 
+            // Lấy thông tin từ response validate
+            JSONObject jsonValidate = new JSONObject(new ObjectMapper().writeValueAsString(response));
+            String rsltCd = jsonValidate.optString("rslt_cd");
+            String reasonCode = jsonValidate.optString("reason_code");
+
+            // Check điều kiện throw
             if ("Bạn đã tham gia chương trình rồi".equalsIgnoreCase(message)) {
                 throw new CustomedBadRequestException("Bạn đã tham gia chương trình rồi.");
             }
 
-            // Nếu chưa tham gia thì sinh token
+            // Nếu không throw thì sinh token
             String token = verificationService.generateToken(req.getContact_number());
             response.setToken(token);
+            response.setRslt_msg("Success");
+
+            // Gắn thông điệp theo điều kiện
+            if ("f".equalsIgnoreCase(rsltCd) && "D".equalsIgnoreCase(reasonCode)) {
+                response.setRslt_cd("s");
+                response.setReason_code("0");
+                response.setStatus(0);
+            } else {
+                response.setRslt_cd("s");
+                response.setReason_code("0");
+                response.setStatus(1);
+
+            }
+
+            return response;
 
         } catch (DataAccessException ex) {
             Throwable rootCause = ExceptionUtils.getRootCause(ex);
@@ -202,7 +218,7 @@ public class MobileCardServiceImpl implements MobileCardService {
             throw new CustomedBadRequestException("Lỗi xử lý dữ liệu từ hệ thống kiểm tra số điện thoại");
         }
 
-        return response;
+
     }
 
     private String formatDate(Date date, SimpleDateFormat formatter) {
@@ -213,16 +229,35 @@ public class MobileCardServiceImpl implements MobileCardService {
         card.setStatus(CardEnum.ACTIVE.getStatus());
         card.setCreatedDate(createdDate);
 
+        // Chuẩn hóa price nếu là số
         String rawPrice = card.getPrice();
         if (rawPrice != null && !rawPrice.trim().isEmpty()) {
             try {
                 double parsed = Double.parseDouble(rawPrice.trim());
                 card.setPrice(String.valueOf((long) parsed));
             } catch (NumberFormatException e) {
-                // Giữ nguyên nếu không parse được nhưng loại bỏ khoảng trắng
                 card.setPrice(rawPrice.trim());
             }
         }
+
+        // Convert issueDate nếu là số serial từ Excel
+        card.setIssueDate(convertExcelSerialToDate(card.getIssueDate()));
+        card.setExpiredDate(convertExcelSerialToDate(card.getExpiredDate()));
     }
+
+    private String convertExcelSerialToDate(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+
+        try {
+            double excelDate = Double.parseDouble(value.trim());
+            Date date = DateUtil.getJavaDate(excelDate);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return sdf.format(date);
+        } catch (NumberFormatException e) {
+            // Trường hợp không phải dạng số, giữ nguyên
+            return value.trim();
+        }
+    }
+
 
 }

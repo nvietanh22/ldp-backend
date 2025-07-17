@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -105,19 +106,48 @@ public class ExcelService {
     }
 
     private String getCellValueAsString(Cell cell) {
+        if (cell == null) return null;
+
         switch (cell.getCellType()) {
             case STRING:
-                return cell.getStringCellValue();
+                String value = cell.getStringCellValue().trim();
+                // Nếu là ngày dạng "yyyy-MM-dd" thì thêm "00:00:00" (tuỳ ý)
+                if (value.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+                    return value + " 00:00:00";
+                }
+                return value;
+
             case NUMERIC:
-                return String.valueOf(cell.getNumericCellValue());
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    // Format luôn theo yyyy-MM-dd HH:mm:ss
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    return sdf.format(cell.getDateCellValue());
+                } else {
+                    double valueNumeric = cell.getNumericCellValue();
+                    return (valueNumeric == (long) valueNumeric)
+                            ? String.valueOf((long) valueNumeric)
+                            : String.valueOf(valueNumeric);
+                }
+
             case BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
+
             case FORMULA:
-                return cell.getCellFormula();
-            default:
+                try {
+                    return cell.getStringCellValue().trim();
+                } catch (Exception e) {
+                    return String.valueOf(cell.getNumericCellValue());
+                }
+
+            case BLANK:
                 return "";
+
+            default:
+                return cell.toString().trim();
         }
     }
+
+
 
     private Object convertValue(String value, Class<?> targetType) {
         if (targetType == String.class) return value;

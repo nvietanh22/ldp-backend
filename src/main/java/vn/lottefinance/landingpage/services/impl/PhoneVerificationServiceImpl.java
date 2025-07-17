@@ -26,8 +26,8 @@ import java.util.Date;
 @Slf4j
 public class PhoneVerificationServiceImpl implements PhoneVerificationService {
 
-    @Autowired
-    private EsbWareHouseClient esbWareHouseClient;
+
+    private final EsbWareHouseClient esbWareHouseClient;
 
     @Override
     public String generateToken(String phoneNumber) {
@@ -80,32 +80,10 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
                 throw new CustomedBadRequestException("Thiếu thông tin thời gian tạo hoặc hết hạn token.");
             }
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-            LocalDateTime createdAt = createdAtDate.toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
-
-            LocalDateTime expiredAt = expiredAtDate.toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
-
-            String formattedCreatedAt = createdAt.format(formatter);
-            String formattedExpiredAt = expiredAt.format(formatter);
-
-            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
-                    .verified(1)
-                    .createdAt(formattedCreatedAt)
-                    .expiredAt(formattedExpiredAt)
-                    .phoneNumber(requestDTO.getPhoneNumber())
-                    .token(requestDTO.getToken())
-                    .build();
-
             if (response.getStatus() == 0 &&
                     !response.isVerifyed() &&
                     expiredAtDate.after(new Date())) {
 
-//                esbWareHouseClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
                 return true;
             }
 
