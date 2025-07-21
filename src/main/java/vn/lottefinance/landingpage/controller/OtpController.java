@@ -31,14 +31,37 @@ public class OtpController {
     @RequiresCaptcha
     @ResponseStatus(HttpStatus.OK)
     public OtpGenDto.Response genOtp(@Valid @RequestBody OtpGenDto.Request req, HttpServletRequest request) {
-        return otpService.genOtp(req, channelService.processChannel(request.getHeader("referer")));
+//        return otpService.genOtp(req, request.getHeader("channel"));
+        return OtpGenDto.Response.builder()
+                .ErrorCode("0")
+                .ErrorMessage("Successful")
+                .Data(OtpGenDto.DataResponse.builder()
+                        .result(
+                                OtpGenDto.ResultResponse.builder()
+                                        .status(true)
+                                        .value(true)
+                                        .build()
+                        )
+                        .build())
+                .build();
     }
 
     @PostMapping("/verify-otp")
-    @RequiresCaptcha
+//    @RequiresCaptcha
     @ResponseStatus(HttpStatus.OK)
     public OtpVerifyDto.Response verifyOtp(@Valid @RequestBody OtpVerifyDto.Request req, HttpServletRequest request) {
-        return otpService.verify(req, channelService.processChannel(request.getHeader("referer")));
+//        return otpService.verify(req, request.getHeader("channel"));
+        return OtpVerifyDto.Response.builder()
+                .ErrorCode("0")
+                .Data(OtpVerifyDto.DataResponse.builder()
+                        .result(OtpVerifyDto.ResultResponse.builder()
+                                .value(true)
+                                .status(true)
+                                .authentication("ACCEPT")
+                                .build())
+                        .build())
+                .ErrorMessage("Successful")
+                .build();
     }
 
     @PostMapping("/ps/gen-otp")

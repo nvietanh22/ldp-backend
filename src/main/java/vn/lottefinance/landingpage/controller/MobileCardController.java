@@ -57,7 +57,7 @@ public class MobileCardController {
 
     @PostMapping("/get-price")
     @ResponseStatus(HttpStatus.OK)
-    public String getActivePriceByBrandService(@Valid @RequestBody GetListCardActiveByBrandRequestDTO request) {
+    public GetCardResponseDTO getActivePriceByBrandService(@Valid @RequestBody GetListCardActiveByBrandRequestDTO request) {
         return esbWareHouseClient.getActivePriceByBrandService(request);
     }
 

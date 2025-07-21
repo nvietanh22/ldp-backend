@@ -393,7 +393,7 @@ public class EsbWareHouseClient {
         }
     }
 
-    public String getActivePriceByBrandService(GetListCardActiveByBrandRequestDTO requestDTO) {
+    public GetCardResponseDTO getActivePriceByBrandService(GetListCardActiveByBrandRequestDTO requestDTO) {
         log.info("Start upsertPhoneToken: {}", requestDTO);
 
         ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
@@ -420,9 +420,21 @@ public class EsbWareHouseClient {
             log.info("RESPONSE: {}", response);
 
             JSONObject data = jsonObject.optJSONObject("Data");
-            return data != null ? data.toString() : "{}";
+            String prices = "";
+            if (data != null && data.has("prices")) {
+                prices = data.getString("prices");
+            }
+
+            return GetCardResponseDTO
+                    .builder()
+                    .prices(prices)
+                    .reason_code("0")
+                    .rslt_msg("Success")
+                    .rslt_cd("s")
+                    .build();
         } catch (IOException e) {
             throw new CustomedBadRequestException("Lỗi gọi API", e);
         }
     }
+
 }
