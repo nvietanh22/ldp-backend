@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.lottefinance.landingpage.client.custom.EsbWareHouseClient;
+import vn.lottefinance.landingpage.dto.DataDto;
+import vn.lottefinance.landingpage.dto.ResponseDto;
 import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.services.ChannelService;
 import vn.lottefinance.landingpage.services.MobileCardService;
@@ -59,6 +61,13 @@ public class MobileCardController {
     @ResponseStatus(HttpStatus.OK)
     public GetCardResponseDTO getActivePriceByBrandService(@Valid @RequestBody GetListCardActiveByBrandRequestDTO request) {
         return esbWareHouseClient.getActivePriceByBrandService(request);
+    }
+
+    @PostMapping("/minigame-process")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ResponseDto> process(@RequestBody DataDto dto, HttpServletRequest request) {
+        String channel =  channelService.processChannel(request.getHeader("referer"));
+        return ResponseEntity.ok(esbWareHouseClient.saveWarehouse(dto, channel));
     }
 
 }

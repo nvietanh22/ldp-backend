@@ -437,4 +437,70 @@ public class EsbWareHouseClient {
         }
     }
 
+    public ResponseDto saveWarehouse(DataDto dto, String channel) {
+        log.info("saveWarehouse Request: " + dto.toString());
+        CustomerInfoRequestDto customerInfoRequestDto = new CustomerInfoRequestDto();
+        customerInfoRequestDto.setTransId(UUID.randomUUID().toString());
+        if (dto.getInviteList() != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                List<InviteInfo> inviteInfos = mapper.readValue(dto.getInviteList(), new TypeReference<List<InviteInfo>>() {
+                });
+                for (InviteInfo invite : inviteInfos) {
+                    log.info("Invite: {} - {}", invite.getName(), invite.getPhone());
+                }
+
+                String inviteJson = mapper.writeValueAsString(inviteInfos);
+                log.info("Converted InviteList to JSON: {}", inviteJson);
+
+                dto.setInviteList(inviteJson);
+
+            } catch (IOException e) {
+                throw new CustomedBadRequestException("Invalid inviteList JSON", e);
+            }
+        }
+        customerInfoRequestDto.setData(dto);
+        ResponseDto responseDto = new ResponseDto();
+        if (channel != ChannelEnum.LOAN7.getVal()) {
+            ResponseDto phoneValidationResult = validateVietnamesePhoneNumber(dto.getPhoneNumber());
+            if (!"Success".equals(phoneValidationResult.getRslt_msg())) {
+                return phoneValidationResult;
+            }
+        }
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(customerInfoRequestDto);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+        if (channel != ChannelEnum.LOAN7.getVal()) {
+            String key = String.format("%s_%s", dto.getPhoneNumber(), dto.getIdCard());
+            log.info("putInCache: {}", key);
+            cacheService.putInCache(key, OtpVerifyStatusEnum.DONE.getVal());
+        } else {
+            String key = String.format("%s_%s", dto.getPhoneNumber(), channel);
+            log.info("putInCache: {}", key);
+            cacheService.putInCache(key, OtpVerifyStatusEnum.DONE.getVal());
+        }
+        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = esbBaseUrl + inquiryService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            responseDto.setReason_code(jsonObject.optString("ErrorCode"));
+            if (jsonObject.optString("ErrorMessage").equals("Successful")) {
+                responseDto.setRslt_msg("Success");
+                log.info("Start create cache: {}");
+            } else {
+                responseDto.setRslt_msg(jsonObject.optString("ErrorMessage"));
+            }
+            return responseDto;
+        } catch (IOException e) {
+            throw new CustomedBadRequestException(e);
+        }
+    }
+
 }

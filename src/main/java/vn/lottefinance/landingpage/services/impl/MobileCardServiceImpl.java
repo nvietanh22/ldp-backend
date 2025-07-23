@@ -212,7 +212,7 @@ public class MobileCardServiceImpl implements MobileCardService {
         } catch (DataAccessException ex) {
             Throwable rootCause = ExceptionUtils.getRootCause(ex);
             if (rootCause instanceof SQLException) {
-                System.err.println("Stored proc error: " + rootCause.getMessage());
+                log.error("Stored proc error: " + rootCause.getMessage());
             }
             throw ex;
         } catch (JSONException jsonEx) {
