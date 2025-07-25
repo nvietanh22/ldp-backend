@@ -88,6 +88,8 @@ card:
     findPhoneAndToken: /find-phone-token
     findFirstStatusBrandPrice: /find-first-status-brand-price
     getActivePriceByBrand: /get-active-price-by-brand
+    getRatePrice: /get-all-rate-price
+    sendNotification: /notification/zns
 recaptcha:
   enabled: true
   site-key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI

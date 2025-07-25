@@ -83,8 +83,8 @@ public class MobileCardController {
 
     @PostMapping("/generate-layout")
     @ResponseStatus(HttpStatus.OK)
-    public WheelLayoutResponseDTO generateLayout(@RequestParam("brand") String brand) {
-        return service.generateAndCacheLayout(brand);
+    public WheelLayoutResponseDTO generateLayout(@RequestBody GenerateLayoutRequestDTO request) {
+        return service.generateAndCacheLayout(request.getBrand());
     }
 
 }

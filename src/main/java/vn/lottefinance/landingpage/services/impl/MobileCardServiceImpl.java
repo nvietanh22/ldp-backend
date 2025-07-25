@@ -1,6 +1,7 @@
 package vn.lottefinance.landingpage.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -293,45 +294,35 @@ public class MobileCardServiceImpl implements MobileCardService {
             throw new CustomedBadRequestException("Token is invalid or has expired");
         }
 
-        GetListCardActiveByBrandRequestDTO priceRequest = new GetListCardActiveByBrandRequestDTO(request.getBrand());
-        GetCardResponseDTO priceResponse = esbClient.getActivePriceByBrandService(priceRequest);
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        ZonedDateTime expired = now.plusMinutes(50000);
+        String cacheKey = "minigame:layout:" + request.getLayoutId();
+        String layoutJson = cacheService.getFromCache(cacheKey)
+                .orElseThrow(() -> new CustomedBadRequestException("Vòng quay đã hết hạn hoặc không hợp lệ."));
 
-        DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        cacheService.deleteCache(cacheKey);
 
-        if (priceResponse == null || !CardEnum.SUCCESS.getStatus().equalsIgnoreCase(priceResponse.getRslt_msg())) {
-            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
-                    .verified(3)
-                    .phoneNumber(request.getPhoneNumber())
-                    .token(request.getToken())
-                    .createdAt(now.format(formatDate))
-                    .expiredAt(expired.format(formatDate))
-                    .build();
-            esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
-            throw new CustomedBadRequestException("Đã hết phần thưởng, quý khách vui lòng chọn nhà mạng khác ");
+        List<PrizeSegmentDTO> frontendLayout;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            frontendLayout = objectMapper.readValue(layoutJson, new TypeReference<List<PrizeSegmentDTO>>() {});
+        } catch (JsonProcessingException e) {
+            throw new CustomedBadRequestException("Lỗi đọc dữ liệu vòng quay.");
         }
 
+        GetListCardActiveByBrandRequestDTO priceRequest = new GetListCardActiveByBrandRequestDTO(request.getBrand());
+        GetCardResponseDTO priceResponse = esbClient.getActivePriceByBrandService(priceRequest);
         List<String> availablePrizes = (priceResponse.getPrices() != null && !priceResponse.getPrices().isEmpty())
                 ? Arrays.asList(priceResponse.getPrices().split(","))
                 : new ArrayList<>();
 
-        List<PrizeSegmentDTO> frontendLayout = request.getWheelLayout();
-        if (frontendLayout == null || frontendLayout.size() != TOTAL_SLOTS) {
-            throw new CustomedBadRequestException("Invalid wheel layout provided.");
-        }
-
         PrizeSegmentDTO winningSegment = determineWinningSegmentFromLayout(frontendLayout, availablePrizes);
 
-        String cacheKey = "minigame:card:" + request.getPhoneNumber();
+        String cardCacheKey = "minigame:card:" + request.getPhoneNumber();
         String prizeValue = winningSegment.getValue();
 
         PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
                 .verified(1)
                 .phoneNumber(request.getPhoneNumber())
                 .token(request.getToken())
-                .createdAt(now.format(formatDate))
-                .expiredAt(expired.format(formatDate))
                 .build();
         esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
 
@@ -367,29 +358,29 @@ public class MobileCardServiceImpl implements MobileCardService {
                         .build();
                 esbClient.upsertMobileCard(cardUpdateRequest);
 
-                // Lưu mã thẻ vào cache
-                cacheService.putInCache(cacheKey, responseDTO.getVoucherSerial());
+                cacheService.putInCache(cardCacheKey, responseDTO.getVoucherSerial());
                 log.info("Đã lưu thẻ {} vào cache cho SĐT {}", responseDTO.getVoucherSerial(), request.getPhoneNumber());
 
             } catch (Exception e) {
                 log.error("Lỗi khi lấy và cập nhật thẻ trong getSpinResult: {}", e.getMessage());
                 winningSegment = frontendLayout.stream().filter(s -> s.getValue() == null).findFirst().orElse(winningSegment);
-                cacheService.putInCache(cacheKey, CardEnum.LUCKY.getStatus());
+                cacheService.putInCache(cacheKey, "unlucky");
             }
         } else {
-            cacheService.putInCache(cacheKey, CardEnum.LUCKY.getStatus());
-            log.info("Người dùng {} không trúng thưởng, đã lưu MMLSau vào cache.", request.getPhoneNumber());
+            cacheService.putInCache(cardCacheKey, "unlucky");
+            log.info("Người dùng {} không trúng thưởng, đã lưu unlucky vào cache.", request.getPhoneNumber());
         }
 
         String prizeName = winningSegment.getValue() != null
                 ? prizeNameMap.getOrDefault(winningSegment.getValue(), "N/A")
-                : "MAY MẮN LẦN SAU";
+                : "unlucky";
 
         return SpinResultResponseDTO.builder()
                 .prize(winningSegment.getValue())
+//                .prizeName(prizeName)
                 .targetIndex(winningSegment.getIndex())
                 .rslt_cd("s")
-                .rslt_msg(CardEnum.SUCCESS.getStatus())
+                .rslt_msg("Success")
                 .reason_code("0")
                 .build();
     }
@@ -397,11 +388,11 @@ public class MobileCardServiceImpl implements MobileCardService {
     private PrizeSegmentDTO determineWinningSegmentFromLayout(List<PrizeSegmentDTO> layout, List<String> availablePrizes) {
         List<PrizeSegmentDTO> weightedList = new ArrayList<>();
         prizeRatio.forEach((prizeKey, ratio) -> {
-            boolean isMMLSau = CardEnum.LUCKY.getStatus().equals(prizeKey);
-            if ((!isMMLSau && availablePrizes.contains(prizeKey)) || isMMLSau) {
+            boolean isUnlucky = "unlucky".equals(prizeKey);
+            if ((!isUnlucky && availablePrizes.contains(prizeKey)) || isUnlucky) {
                 List<PrizeSegmentDTO> matchingSegments = layout.stream()
-                        .filter(s -> Objects.equals(s.getValue(), isMMLSau ? null : prizeKey))
-                        .toList();
+                        .filter(s -> Objects.equals(s.getValue(), isUnlucky ? null : prizeKey))
+                        .collect(Collectors.toList());
 
                 if (!matchingSegments.isEmpty()) {
                     int weight = (int) (ratio * 1000);
@@ -415,7 +406,7 @@ public class MobileCardServiceImpl implements MobileCardService {
         if (weightedList.isEmpty()) {
             List<PrizeSegmentDTO> losingSegments = layout.stream()
                     .filter(s -> s.getValue() == null)
-                    .toList();
+                    .collect(Collectors.toList());
 
             if (!losingSegments.isEmpty()) {
                 return losingSegments.get(new Random().nextInt(losingSegments.size()));
@@ -426,4 +417,87 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         return weightedList.get(new Random().nextInt(weightedList.size()));
     }
+
+    private List<PrizeSegmentDTO> createRandomizedLayout(List<String> availablePrizes, RatePriceResponseDTO ratePriceResponse) {
+        final int TOTAL_SLOTS = 10;
+        List<PrizeSegmentDTO> distributedPrizes = new ArrayList<>();
+        int slotsFilled = 0;
+
+        Map<String, Double> prizeRatio = new HashMap<>();
+        // Lặp qua danh sách rate_price từ DTO mới
+        if (ratePriceResponse.getRate_price() != null) {
+            for (RatePriceDTO item : ratePriceResponse.getRate_price()) {
+                String priceKey = "Unlucky".equalsIgnoreCase(item.getPrice()) ? "unlucky" : item.getPrice();
+                double ratio = Double.parseDouble(item.getRate()) / 100.0;
+                prizeRatio.put(priceKey, ratio);
+            }
+        }
+
+        List<String> validPrizeTypes = prizeRatio.keySet().stream()
+                .filter(p -> !"unlucky".equals(p) && availablePrizes.contains(p) && prizeRatio.get(p) > 0)
+                .collect(Collectors.toList());
+
+        double totalAvailableRatio = validPrizeTypes.stream().mapToDouble(prizeRatio::get).sum();
+        double unluckyRatio = prizeRatio.getOrDefault("unlucky", 0.0);
+        double totalRatio = totalAvailableRatio + unluckyRatio;
+
+        for (String prize : validPrizeTypes) {
+            if (totalRatio > 0) {
+                double normalizedRatio = prizeRatio.get(prize) / totalRatio;
+                int slotsForThisPrize = (int) Math.round(normalizedRatio * TOTAL_SLOTS);
+                for (int i = 0; i < slotsForThisPrize; i++) {
+                    if (slotsFilled < TOTAL_SLOTS) {
+                        distributedPrizes.add(new PrizeSegmentDTO(0, prize));
+                        slotsFilled++;
+                    }
+                }
+            }
+        }
+
+        while (slotsFilled < TOTAL_SLOTS) {
+            distributedPrizes.add(new PrizeSegmentDTO(0, null));
+            slotsFilled++;
+        }
+
+        Collections.shuffle(distributedPrizes);
+
+        for (int i = 0; i < distributedPrizes.size(); i++) {
+            distributedPrizes.get(i).setIndex(i);
+        }
+        return distributedPrizes;
+    }
+
+    @Override
+    public WheelLayoutResponseDTO generateAndCacheLayout(String brand) {
+        GetListCardActiveByBrandRequestDTO priceRequest = new GetListCardActiveByBrandRequestDTO(brand);
+        GetCardResponseDTO priceResponse = esbClient.getActivePriceByBrandService(priceRequest);
+        List<String> availablePrizes = (priceResponse.getPrices() != null && !priceResponse.getPrices().isEmpty())
+                ? Arrays.asList(priceResponse.getPrices().split(","))
+                : new ArrayList<>();
+
+        RatePriceResponseDTO ratePriceResponse = esbClient.getRatePrice();
+
+        List<PrizeSegmentDTO> layout = createRandomizedLayout(availablePrizes, ratePriceResponse);
+
+        String layoutId = UUID.randomUUID().toString();
+        String cacheKey = "minigame:layout:" + layoutId;
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String layoutJson = objectMapper.writeValueAsString(layout);
+            cacheService.putInCache(cacheKey, layoutJson);
+        } catch (JsonProcessingException e) {
+            log.error("Không thể serialize wheelLayout: {}", e.getMessage());
+            throw new CustomedBadRequestException("Lỗi hệ thống khi tạo vòng quay.");
+        }
+
+        return WheelLayoutResponseDTO.builder()
+                .wheelLayout(layout)
+                .layoutId(layoutId)
+                .rslt_cd("s")
+                .rslt_msg("Success")
+                .build();
+    }
 }
+
+
