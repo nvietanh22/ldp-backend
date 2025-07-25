@@ -27,6 +27,7 @@ public class MobileCardController {
     private final ChannelService channelService;
 
     private final EsbWareHouseClient esbWareHouseClient;
+    private final MobileCardService mobileCardService;
 
 
     @PostMapping("/get-card")
@@ -68,6 +69,12 @@ public class MobileCardController {
     public ResponseEntity<ResponseDto> process(@RequestBody DataDto dto, HttpServletRequest request) {
         String channel =  channelService.processChannel(request.getHeader("referer"));
         return ResponseEntity.ok(esbWareHouseClient.saveWarehouse(dto, channel));
+    }
+
+    @PostMapping("/spin-result")
+    @ResponseStatus(HttpStatus.OK)
+    public SpinResultResponseDTO getSpinResult(@Valid @RequestBody SpinResultRequestDTO request) {
+        return service.getSpinResult(request);
     }
 
 }

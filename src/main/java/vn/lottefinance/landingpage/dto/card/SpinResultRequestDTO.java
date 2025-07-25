@@ -5,15 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetMobileCardResponseDTO {
-    private String cardNumber;
-
-    private String rslt_msg;
-
-    private String reason_code;
-    private String price;
+public class SpinResultRequestDTO {
+    private String phoneNumber;
+    private String brand;
+    private String token;
+    private List<PrizeSegmentDTO> wheelLayout;
 }

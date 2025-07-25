@@ -9,11 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetMobileCardResponseDTO {
-    private String cardNumber;
-
+public class SpinResultResponseDTO {
+    private String prize;
+    private String prizeName;
+//    private String cardNumber;
+    private int targetIndex;
     private String rslt_msg;
-
     private String reason_code;
-    private String price;
+    private String rslt_cd;
 }

@@ -1,8 +1,10 @@
 package vn.lottefinance.landingpage.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -10,24 +12,26 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 import vn.lottefinance.landingpage.client.custom.*;
 import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.enums.CardEnum;
 import vn.lottefinance.landingpage.enums.ChannelEnum;
 import vn.lottefinance.landingpage.exception.CustomedBadRequestException;
+import vn.lottefinance.landingpage.services.CacheService;
 import vn.lottefinance.landingpage.services.ExcelService;
 import vn.lottefinance.landingpage.services.MobileCardService;
 import vn.lottefinance.landingpage.services.PhoneVerificationService;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +65,46 @@ public class MobileCardServiceImpl implements MobileCardService {
     private final Loan01Client loan1Client;
 
     private final EsbWareHouseClient esbClient;
+    private final CacheService cacheService;
+
+    private final LuckyWheelConfig luckyWheelConfig;
+
+    private Map<String, Double> prizeRatio;
+    private Map<String, String> prizeNameMap;
+
+    @Component
+    @ConfigurationProperties(prefix = "lucky-wheel")
+    @Data
+    public static class LuckyWheelConfig {
+        private List<PrizeConfig> prizes;
+    }
+
+    @Data
+    public static class PrizeConfig {
+        private String value;
+        private String name;
+        private double ratio;
+    }
+
+    @PostConstruct
+    public void init() {
+        prizeRatio = new HashMap<>();
+        prizeNameMap = new HashMap<>();
+
+        if (luckyWheelConfig.getPrizes() == null) {
+            log.error("Cấu hình vòng quay 'lucky-wheel.prizes' bị thiếu trong application.yaml!");
+            return;
+        }
+
+        for (PrizeConfig config : luckyWheelConfig.getPrizes()) {
+            prizeRatio.put(config.getValue(), config.getRatio());
+            if (!"MMLSau".equals(config.getValue())) {
+                prizeNameMap.put(config.getValue(), config.getName());
+            }
+        }
+
+        log.info("Cấu hình Vòng quay May mắn đã được tải thành công.");
+    }
 
     @Override
     public GetMobileCardResponseDTO getCardNumber(GetMobileCardRequestDTO request) {
@@ -69,38 +113,22 @@ public class MobileCardServiceImpl implements MobileCardService {
             throw new CustomedBadRequestException("Token is invalid or has expired");
         }
 
-        FindFirstByBrandAndPriceAndStatusRequestDTO findDTO = FindFirstByBrandAndPriceAndStatusRequestDTO.builder().brand(request.getBrand()).price(request.getPrice()).status(CardEnum.ACTIVE.getStatus()).build();
+        String cacheKey = "minigame:card:" + request.getPhoneNumber();
+        String cardNumber = cacheService.getFromCache(cacheKey)
+                .orElseThrow(() -> new CustomedBadRequestException("Không tìm thấy kết quả quay thưởng. Vui lòng thử lại."));
 
-        String mobileCardJson = esbClient.findFirstByBrandAndPriceAndStatus(findDTO);
+        cacheService.deleteCache(cacheKey);
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-
-            MobileCardResponseDTO responseDTO = objectMapper.readValue(mobileCardJson, MobileCardResponseDTO.class);
-
-            if (responseDTO.getStatusOut() == 1) {
-                throw new CustomedBadRequestException("Đã hết thẻ điện thoại, bạn vui lòng chọn nhà mạng khác!");
-            }
-
-            // Convert responseDTO -> requestDTO
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-            MobileCardRequestDTO requestDTO = MobileCardRequestDTO.builder().link(responseDTO.getLink()).name(responseDTO.getName()).sms(responseDTO.getSms()).email(responseDTO.getEmail()).partnerCode(responseDTO.getPartnerCode()).gotitCode(responseDTO.getGotitCode()).voucherSerial(responseDTO.getVoucherSerial()).brand(request.getBrand()).productName(responseDTO.getProductName()).price(request.getPrice()).issueDate(formatDate(responseDTO.getIssueDate(), formatter)).expiredDate(formatDate(responseDTO.getExpiredDate(), formatter)).transactionRefId(responseDTO.getTransRefId()).poNumber(responseDTO.getPoNumber()).status(CardEnum.INACTIVE.getStatus()) // Đánh dấu đã sử dụng
-                    .phoneNumber(request.getPhoneNumber()) // Gắn số điện thoại người nhận
-                    .receivedDate(formatDate(new Date(), formatter)).build();
-
-            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder().verified(1).phoneNumber(request.getPhoneNumber()).token(request.getToken()).build();
-
-            esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
-
-            esbClient.upsertMobileCard(requestDTO);
-
-            return GetMobileCardResponseDTO.builder().cardNumber(requestDTO.getVoucherSerial()).reason_code("0").rslt_msg("Success").build();
-
-        } catch (Exception e) {
-            throw new CustomedBadRequestException("Lỗi xử lý dữ liệu mobile card: " + e.getMessage());
+        if ("MMLSau".equals(cardNumber)) {
+            throw new CustomedBadRequestException("Người dùng không trúng thưởng.");
         }
+
+        return GetMobileCardResponseDTO.builder()
+                .cardNumber(cardNumber)
+                .price(request.getPrice())
+                .rslt_msg("Success")
+                .reason_code("0")
+                .build();
     }
 
 
@@ -142,6 +170,10 @@ public class MobileCardServiceImpl implements MobileCardService {
         log.info("Request: {}", req);
 
         ValidateResponseDTO response = new ValidateResponseDTO();
+        response.setRequest_id(req.getRequest_id());
+        response.setReason_code("0");
+        response.setRslt_msg("Success");
+        response.setRslt_cd("s");
 //
 //        // Gửi validate tới đúng client theo channel
         if (StringUtils.isEmpty(channel) || channel.equals(ChannelEnum.CARD.getVal())) {
@@ -204,7 +236,6 @@ public class MobileCardServiceImpl implements MobileCardService {
                 response.setRslt_cd("s");
                 response.setReason_code("0");
                 response.setStatus(1);
-
             }
 
             return response;
@@ -261,5 +292,139 @@ public class MobileCardServiceImpl implements MobileCardService {
         }
     }
 
+//    private static final Map<String, Double> PRIZE_RATIO = Map.of(
+//            "10000", 0.5,
+//            "20000", 0.1,
+//            "50000", 0.0,
+//            "MMLSau", 0.4
+//    );
+//    private static final Map<String, String> PRIZE_NAME_MAP = Map.of(
+//            "10000", "10K",
+//            "20000", "20K",
+//            "50000", "50K"
+//    );
+    private static final int TOTAL_SLOTS = 10;
 
+    @Override
+    public SpinResultResponseDTO getSpinResult(SpinResultRequestDTO request) {
+        boolean isTokenValid = verificationService.verifyToken(request.getPhoneNumber(), request.getToken());
+        if (!isTokenValid) {
+            throw new CustomedBadRequestException("Token is invalid or has expired");
+        }
+
+        GetListCardActiveByBrandRequestDTO priceRequest = new GetListCardActiveByBrandRequestDTO(request.getBrand());
+        GetCardResponseDTO priceResponse = esbClient.getActivePriceByBrandService(priceRequest);
+        List<String> availablePrizes = (priceResponse.getPrices() != null && !priceResponse.getPrices().isEmpty())
+                ? Arrays.asList(priceResponse.getPrices().split(","))
+                : new ArrayList<>();
+
+        List<PrizeSegmentDTO> frontendLayout = request.getWheelLayout();
+        if (frontendLayout == null || frontendLayout.size() != TOTAL_SLOTS) {
+            throw new CustomedBadRequestException("Invalid wheel layout provided.");
+        }
+
+        PrizeSegmentDTO winningSegment = determineWinningSegmentFromLayout(frontendLayout, availablePrizes);
+
+        String cacheKey = "minigame:card:" + request.getPhoneNumber();
+        String prizeValue = winningSegment.getValue();
+
+        PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
+                .verified(1)
+                .phoneNumber(request.getPhoneNumber())
+                .token(request.getToken())
+                .build();
+        esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
+
+        if (prizeValue != null) {
+            try {
+                FindFirstByBrandAndPriceAndStatusRequestDTO findDTO = FindFirstByBrandAndPriceAndStatusRequestDTO.builder()
+                        .brand(request.getBrand())
+                        .price(prizeValue)
+                        .status(CardEnum.ACTIVE.getStatus())
+                        .build();
+                String mobileCardJson = esbClient.findFirstByBrandAndPriceAndStatus(findDTO);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+                MobileCardResponseDTO responseDTO = objectMapper.readValue(mobileCardJson, MobileCardResponseDTO.class);
+
+                if (responseDTO.getStatusOut() == 1) {
+                    throw new CustomedBadRequestException("Đã hết thẻ điện thoại cho giải thưởng này!");
+                }
+
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                MobileCardRequestDTO cardUpdateRequest = MobileCardRequestDTO.builder()
+                        .link(responseDTO.getLink()).name(responseDTO.getName()).sms(responseDTO.getSms())
+                        .email(responseDTO.getEmail()).partnerCode(responseDTO.getPartnerCode())
+                        .gotitCode(responseDTO.getGotitCode()).voucherSerial(responseDTO.getVoucherSerial())
+                        .brand(request.getBrand()).productName(responseDTO.getProductName())
+                        .price(prizeValue).issueDate(formatDate(responseDTO.getIssueDate(), formatter))
+                        .expiredDate(formatDate(responseDTO.getExpiredDate(), formatter))
+                        .transactionRefId(responseDTO.getTransRefId()).poNumber(responseDTO.getPoNumber())
+                        .status(CardEnum.INACTIVE.getStatus()) // Đánh dấu đã sử dụng
+                        .phoneNumber(request.getPhoneNumber()) // Gắn số điện thoại người nhận
+                        .receivedDate(formatDate(new Date(), formatter))
+                        .build();
+                esbClient.upsertMobileCard(cardUpdateRequest);
+
+                // Lưu mã thẻ vào cache
+                cacheService.putInCache(cacheKey, responseDTO.getVoucherSerial());
+                log.info("Đã lưu thẻ {} vào cache cho SĐT {}", responseDTO.getVoucherSerial(), request.getPhoneNumber());
+
+            } catch (Exception e) {
+                log.error("Lỗi khi lấy và cập nhật thẻ trong getSpinResult: {}", e.getMessage());
+                winningSegment = frontendLayout.stream().filter(s -> s.getValue() == null).findFirst().orElse(winningSegment);
+                cacheService.putInCache(cacheKey, "MMLSau");
+            }
+        } else {
+            cacheService.putInCache(cacheKey, "MMLSau");
+            log.info("Người dùng {} không trúng thưởng, đã lưu MMLSau vào cache.", request.getPhoneNumber());
+        }
+
+        String prizeName = winningSegment.getValue() != null
+                ? prizeNameMap.getOrDefault(winningSegment.getValue(), "N/A")
+                : "MAY MẮN LẦN SAU";
+
+        return SpinResultResponseDTO.builder()
+                .prize(winningSegment.getValue())
+                .prizeName(prizeName)
+                .targetIndex(winningSegment.getIndex())
+                .rslt_cd("s")
+                .rslt_msg("Success")
+                .reason_code("0")
+                .build();
+    }
+
+    private PrizeSegmentDTO determineWinningSegmentFromLayout(List<PrizeSegmentDTO> layout, List<String> availablePrizes) {
+        List<PrizeSegmentDTO> weightedList = new ArrayList<>();
+        prizeRatio.forEach((prizeKey, ratio) -> {
+            boolean isMMLSau = "MMLSau".equals(prizeKey);
+            if ((!isMMLSau && availablePrizes.contains(prizeKey)) || isMMLSau) {
+                List<PrizeSegmentDTO> matchingSegments = layout.stream()
+                        .filter(s -> Objects.equals(s.getValue(), isMMLSau ? null : prizeKey))
+                        .collect(Collectors.toList());
+
+                if (!matchingSegments.isEmpty()) {
+                    int weight = (int) (ratio * 1000);
+                    for (int i = 0; i < weight; i++) {
+                        weightedList.add(matchingSegments.get(new Random().nextInt(matchingSegments.size())));
+                    }
+                }
+            }
+        });
+
+        if (weightedList.isEmpty()) {
+            List<PrizeSegmentDTO> losingSegments = layout.stream()
+                    .filter(s -> s.getValue() == null)
+                    .collect(Collectors.toList());
+
+            if (!losingSegments.isEmpty()) {
+                return losingSegments.get(new Random().nextInt(losingSegments.size()));
+            } else {
+                return layout.get(new Random().nextInt(layout.size()));
+            }
+        }
+
+        return weightedList.get(new Random().nextInt(weightedList.size()));
+    }
 }

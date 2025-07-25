@@ -1,3 +1,40 @@
+#jasypt:
+#  encryptor:
+#    password: 12341234
+#    property:
+#      prefix: "ENC("
+#      suffix: ")"
+#spring:
+#  data:
+#    redis:
+#      host: localhost
+#      port: 6379
+#      password: aloaluale
+#api:
+#  baseUrl: http://10.252.116.84:7074
+#  username: landingpage
+#  password: abc123
+#  endpoint:
+#    inquiry: /api-landing-page/v1/warehouse/process
+#card:
+#  baseUrl: http://10.252.116.84:7056/api-landing-page/v1
+#  endpoint:
+#    checkExit: /check-phone-exists
+#    upsertPhoneToken: /upsert-phone-token
+#    upsertMobileCard: /upsert-mobile-card
+#    findPhoneAndToken: /find-phone-token
+#    findFirstStatusBrandPrice: /find-first-status-brand-price
+#    getActivePriceByBrand: /get-active-price-by-brand
+#minigame:
+#  spin:
+#    weights:
+#      10000: 50
+#      20000: 10
+#      50000: 0
+#      100000: 0
+#      "May mắn lần sau": 40
+
+
 jasypt:
   encryptor:
     password: 12341234
@@ -5,19 +42,45 @@ jasypt:
       prefix: "ENC("
       suffix: ")"
 spring:
+  profiles:
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
   data:
     redis:
       host: localhost
       port: 6379
-      password: aloaluale
+  #      password: aloaluale
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+
+    #    url: jdbc:oracle:thin:@//10.252.116.83:1521/pdmsdb
+    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
+    #    username: pdms
+    #    password: HkAlF!pdmsDev()2o25
+    username: pdms
+    password: pdms123
+#    esb.user : pdms456
+    hikari:
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+    driver-class-name: oracle.jdbc.OracleDriver
 api:
-  baseUrl: http://10.252.116.84:7074
+  #  baseUrl: http://10.252.116.84:7074
+  url: http://localhost:63342/
+  baseUrl: http://localhost:63342/
   username: landingpage
   password: abc123
   endpoint:
     inquiry: /api-landing-page/v1/warehouse/process
 card:
-  baseUrl: http://10.252.116.84:7056/api-landing-page/v1
+  #  baseUrl: http://10.252.116.84:7056/api-landing-page/v1
+  baseUrl: http://localhost:8080/api-landing-page/v1
   endpoint:
     checkExit: /check-phone-exists
     upsertPhoneToken: /upsert-phone-token
@@ -25,3 +88,26 @@ card:
     findPhoneAndToken: /find-phone-token
     findFirstStatusBrandPrice: /find-first-status-brand-price
     getActivePriceByBrand: /get-active-price-by-brand
+recaptcha:
+  enabled: true
+  site-key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+  secret-key: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
+
+lucky-wheel:
+  prizes:
+    - value: '10000'
+      name: '10K'
+      ratio: 0.5
+    - value: '20000'
+      name: '20K'
+      ratio: 0.1
+    - value: '50000'
+      name: '50K'
+      ratio: 0.0 # Tạm thời tắt giải này
+    - value: 'MMLSau'
+      name: 'MAY MẮN LẦN SAU'
+      ratio: 0.4
+
+app:
+  active-profile: ${spring.profiles.active:dev}
+
