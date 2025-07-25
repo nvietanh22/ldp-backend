@@ -103,8 +103,8 @@ lucky-wheel:
       ratio: 0.1
     - value: '50000'
       name: '50K'
-      ratio: 0.0 # Tạm thời tắt giải này
-    - value: 'MMLSau'
+      ratio: 0.0
+    - value: 'unlucky'
       name: 'MAY MẮN LẦN SAU'
       ratio: 0.4
 

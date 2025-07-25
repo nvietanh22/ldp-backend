@@ -98,7 +98,7 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         for (PrizeConfig config : luckyWheelConfig.getPrizes()) {
             prizeRatio.put(config.getValue(), config.getRatio());
-            if (!"MMLSau".equals(config.getValue())) {
+            if (!"unlucky".equals(config.getValue())) {
                 prizeNameMap.put(config.getValue(), config.getName());
             }
         }
@@ -119,7 +119,7 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         cacheService.deleteCache(cacheKey);
 
-        if ("MMLSau".equals(cardNumber)) {
+        if ("unlucky".equals(cardNumber)) {
             throw new CustomedBadRequestException("Người dùng không trúng thưởng.");
         }
 
@@ -292,17 +292,6 @@ public class MobileCardServiceImpl implements MobileCardService {
         }
     }
 
-//    private static final Map<String, Double> PRIZE_RATIO = Map.of(
-//            "10000", 0.5,
-//            "20000", 0.1,
-//            "50000", 0.0,
-//            "MMLSau", 0.4
-//    );
-//    private static final Map<String, String> PRIZE_NAME_MAP = Map.of(
-//            "10000", "10K",
-//            "20000", "20K",
-//            "50000", "50K"
-//    );
     private static final int TOTAL_SLOTS = 10;
 
     @Override
@@ -374,20 +363,20 @@ public class MobileCardServiceImpl implements MobileCardService {
             } catch (Exception e) {
                 log.error("Lỗi khi lấy và cập nhật thẻ trong getSpinResult: {}", e.getMessage());
                 winningSegment = frontendLayout.stream().filter(s -> s.getValue() == null).findFirst().orElse(winningSegment);
-                cacheService.putInCache(cacheKey, "MMLSau");
+                cacheService.putInCache(cacheKey, "unlucky");
             }
         } else {
-            cacheService.putInCache(cacheKey, "MMLSau");
-            log.info("Người dùng {} không trúng thưởng, đã lưu MMLSau vào cache.", request.getPhoneNumber());
+            cacheService.putInCache(cacheKey, "unlucky");
+            log.info("Người dùng {} không trúng thưởng, đã lưu unlucky vào cache.", request.getPhoneNumber());
         }
 
         String prizeName = winningSegment.getValue() != null
                 ? prizeNameMap.getOrDefault(winningSegment.getValue(), "N/A")
-                : "MAY MẮN LẦN SAU";
+                : "unlucky";
 
         return SpinResultResponseDTO.builder()
                 .prize(winningSegment.getValue())
-                .prizeName(prizeName)
+//                .prizeName(prizeName)
                 .targetIndex(winningSegment.getIndex())
                 .rslt_cd("s")
                 .rslt_msg("Success")
@@ -398,10 +387,10 @@ public class MobileCardServiceImpl implements MobileCardService {
     private PrizeSegmentDTO determineWinningSegmentFromLayout(List<PrizeSegmentDTO> layout, List<String> availablePrizes) {
         List<PrizeSegmentDTO> weightedList = new ArrayList<>();
         prizeRatio.forEach((prizeKey, ratio) -> {
-            boolean isMMLSau = "MMLSau".equals(prizeKey);
-            if ((!isMMLSau && availablePrizes.contains(prizeKey)) || isMMLSau) {
+            boolean isUnlucky = "unlucky".equals(prizeKey);
+            if ((!isUnlucky && availablePrizes.contains(prizeKey)) || isUnlucky) {
                 List<PrizeSegmentDTO> matchingSegments = layout.stream()
-                        .filter(s -> Objects.equals(s.getValue(), isMMLSau ? null : prizeKey))
+                        .filter(s -> Objects.equals(s.getValue(), isUnlucky ? null : prizeKey))
                         .collect(Collectors.toList());
 
                 if (!matchingSegments.isEmpty()) {
