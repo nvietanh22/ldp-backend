@@ -27,8 +27,14 @@ public class MobileCardController {
     private final ChannelService channelService;
 
     private final EsbWareHouseClient esbWareHouseClient;
+
     private final MobileCardService mobileCardService;
 
+    @PostMapping("/spin-result")
+    @ResponseStatus(HttpStatus.OK)
+    public SpinResultResponseDTO getSpinResult(@Valid @RequestBody SpinResultRequestDTO request) {
+        return service.getSpinResult(request);
+    }
 
     @PostMapping("/get-card")
     @ResponseStatus(HttpStatus.OK)
@@ -67,14 +73,12 @@ public class MobileCardController {
     @PostMapping("/minigame-process")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ResponseDto> process(@RequestBody DataDto dto, HttpServletRequest request) {
-        String channel =  channelService.processChannel(request.getHeader("referer"));
-        return ResponseEntity.ok(esbWareHouseClient.saveWarehouse(dto, channel));
-    }
-
-    @PostMapping("/spin-result")
-    @ResponseStatus(HttpStatus.OK)
-    public SpinResultResponseDTO getSpinResult(@Valid @RequestBody SpinResultRequestDTO request) {
-        return service.getSpinResult(request);
+//        String channel =  channelService.processChannel(request.getHeader("referer"));
+//        return ResponseEntity.ok(esbWareHouseClient.saveWarehouse(dto, channel));
+        return ResponseEntity.ok(ResponseDto.builder()
+                .reason_code("0")
+                .rslt_msg("Success")
+                .build());
     }
 
 }

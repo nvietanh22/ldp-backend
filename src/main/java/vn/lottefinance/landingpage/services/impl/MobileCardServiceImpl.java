@@ -3,7 +3,6 @@ package vn.lottefinance.landingpage.services.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.beans.factory.annotation.Value;
 import vn.lottefinance.landingpage.client.custom.*;
 import vn.lottefinance.landingpage.dto.card.*;
 import vn.lottefinance.landingpage.enums.CardEnum;
@@ -30,6 +28,9 @@ import vn.lottefinance.landingpage.services.PhoneVerificationService;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,6 +66,9 @@ public class MobileCardServiceImpl implements MobileCardService {
     private final Loan01Client loan1Client;
 
     private final EsbWareHouseClient esbClient;
+
+    private static final int TOTAL_SLOTS = 10;
+
     private final CacheService cacheService;
 
     private final LuckyWheelConfig luckyWheelConfig;
@@ -98,7 +102,7 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         for (PrizeConfig config : luckyWheelConfig.getPrizes()) {
             prizeRatio.put(config.getValue(), config.getRatio());
-            if (!"MMLSau".equals(config.getValue())) {
+            if (CardEnum.LUCKY.getStatus().equals(config.getValue())) {
                 prizeNameMap.put(config.getValue(), config.getName());
             }
         }
@@ -119,14 +123,14 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         cacheService.deleteCache(cacheKey);
 
-        if ("MMLSau".equals(cardNumber)) {
+        if (CardEnum.LUCKY.getStatus().equals(cardNumber)) {
             throw new CustomedBadRequestException("Người dùng không trúng thưởng.");
         }
 
         return GetMobileCardResponseDTO.builder()
                 .cardNumber(cardNumber)
                 .price(request.getPrice())
-                .rslt_msg("Success")
+                .rslt_msg(CardEnum.SUCCESS.getStatus())
                 .reason_code("0")
                 .build();
     }
@@ -170,10 +174,6 @@ public class MobileCardServiceImpl implements MobileCardService {
         log.info("Request: {}", req);
 
         ValidateResponseDTO response = new ValidateResponseDTO();
-        response.setRequest_id(req.getRequest_id());
-        response.setReason_code("0");
-        response.setRslt_msg("Success");
-        response.setRslt_cd("s");
 //
 //        // Gửi validate tới đúng client theo channel
         if (StringUtils.isEmpty(channel) || channel.equals(ChannelEnum.CARD.getVal())) {
@@ -204,7 +204,6 @@ public class MobileCardServiceImpl implements MobileCardService {
 //            throw new CustomedBadRequestException("Not found channel");
 //        }
 
-        // Kiểm tra số điện thoại đã tham gia chưa
         try {
             CheckPhoneExitsRequestDTO checkPhoneDto = new CheckPhoneExitsRequestDTO(req.getContact_number());
             String res = esbClient.checkPhoneExitsOnlyData(checkPhoneDto);
@@ -212,22 +211,18 @@ public class MobileCardServiceImpl implements MobileCardService {
 
             String message = jsonObject.optString("message");
 
-            // Lấy thông tin từ response validate
             JSONObject jsonValidate = new JSONObject(new ObjectMapper().writeValueAsString(response));
             String rsltCd = jsonValidate.optString("rslt_cd");
             String reasonCode = jsonValidate.optString("reason_code");
 
-            // Check điều kiện throw
             if ("Bạn đã tham gia chương trình rồi".equalsIgnoreCase(message)) {
                 throw new CustomedBadRequestException("Bạn đã tham gia chương trình rồi.");
             }
 
-            // Nếu không throw thì sinh token
             String token = verificationService.generateToken(req.getContact_number());
             response.setToken(token);
-            response.setRslt_msg("Success");
+            response.setRslt_msg(CardEnum.SUCCESS.getStatus());
 
-            // Gắn thông điệp theo điều kiện
             if ("f".equalsIgnoreCase(rsltCd) && "D".equalsIgnoreCase(reasonCode)) {
                 response.setRslt_cd("s");
                 response.setReason_code("0");
@@ -236,6 +231,7 @@ public class MobileCardServiceImpl implements MobileCardService {
                 response.setRslt_cd("s");
                 response.setReason_code("0");
                 response.setStatus(1);
+
             }
 
             return response;
@@ -262,7 +258,6 @@ public class MobileCardServiceImpl implements MobileCardService {
         card.setStatus(CardEnum.ACTIVE.getStatus());
         card.setCreatedDate(createdDate);
 
-        // Chuẩn hóa price nếu là số
         String rawPrice = card.getPrice();
         if (rawPrice != null && !rawPrice.trim().isEmpty()) {
             try {
@@ -273,7 +268,6 @@ public class MobileCardServiceImpl implements MobileCardService {
             }
         }
 
-        // Convert issueDate nếu là số serial từ Excel
         card.setIssueDate(convertExcelSerialToDate(card.getIssueDate()));
         card.setExpiredDate(convertExcelSerialToDate(card.getExpiredDate()));
     }
@@ -287,23 +281,10 @@ public class MobileCardServiceImpl implements MobileCardService {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             return sdf.format(date);
         } catch (NumberFormatException e) {
-            // Trường hợp không phải dạng số, giữ nguyên
             return value.trim();
         }
     }
 
-//    private static final Map<String, Double> PRIZE_RATIO = Map.of(
-//            "10000", 0.5,
-//            "20000", 0.1,
-//            "50000", 0.0,
-//            "MMLSau", 0.4
-//    );
-//    private static final Map<String, String> PRIZE_NAME_MAP = Map.of(
-//            "10000", "10K",
-//            "20000", "20K",
-//            "50000", "50K"
-//    );
-    private static final int TOTAL_SLOTS = 10;
 
     @Override
     public SpinResultResponseDTO getSpinResult(SpinResultRequestDTO request) {
@@ -314,6 +295,23 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         GetListCardActiveByBrandRequestDTO priceRequest = new GetListCardActiveByBrandRequestDTO(request.getBrand());
         GetCardResponseDTO priceResponse = esbClient.getActivePriceByBrandService(priceRequest);
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        ZonedDateTime expired = now.plusMinutes(50000);
+
+        DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        if (priceResponse == null || !CardEnum.SUCCESS.getStatus().equalsIgnoreCase(priceResponse.getRslt_msg())) {
+            PhoneVerifyTokenRequestDTO phoneVerifyTokenRequestDTO = PhoneVerifyTokenRequestDTO.builder()
+                    .verified(3)
+                    .phoneNumber(request.getPhoneNumber())
+                    .token(request.getToken())
+                    .createdAt(now.format(formatDate))
+                    .expiredAt(expired.format(formatDate))
+                    .build();
+            esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
+            throw new CustomedBadRequestException("Đã hết phần thưởng, quý khách vui lòng chọn nhà mạng khác ");
+        }
+
         List<String> availablePrizes = (priceResponse.getPrices() != null && !priceResponse.getPrices().isEmpty())
                 ? Arrays.asList(priceResponse.getPrices().split(","))
                 : new ArrayList<>();
@@ -332,6 +330,8 @@ public class MobileCardServiceImpl implements MobileCardService {
                 .verified(1)
                 .phoneNumber(request.getPhoneNumber())
                 .token(request.getToken())
+                .createdAt(now.format(formatDate))
+                .expiredAt(expired.format(formatDate))
                 .build();
         esbClient.upsertPhoneToken(phoneVerifyTokenRequestDTO);
 
@@ -374,10 +374,10 @@ public class MobileCardServiceImpl implements MobileCardService {
             } catch (Exception e) {
                 log.error("Lỗi khi lấy và cập nhật thẻ trong getSpinResult: {}", e.getMessage());
                 winningSegment = frontendLayout.stream().filter(s -> s.getValue() == null).findFirst().orElse(winningSegment);
-                cacheService.putInCache(cacheKey, "MMLSau");
+                cacheService.putInCache(cacheKey, CardEnum.LUCKY.getStatus());
             }
         } else {
-            cacheService.putInCache(cacheKey, "MMLSau");
+            cacheService.putInCache(cacheKey, CardEnum.LUCKY.getStatus());
             log.info("Người dùng {} không trúng thưởng, đã lưu MMLSau vào cache.", request.getPhoneNumber());
         }
 
@@ -387,10 +387,9 @@ public class MobileCardServiceImpl implements MobileCardService {
 
         return SpinResultResponseDTO.builder()
                 .prize(winningSegment.getValue())
-                .prizeName(prizeName)
                 .targetIndex(winningSegment.getIndex())
                 .rslt_cd("s")
-                .rslt_msg("Success")
+                .rslt_msg(CardEnum.SUCCESS.getStatus())
                 .reason_code("0")
                 .build();
     }
@@ -398,11 +397,11 @@ public class MobileCardServiceImpl implements MobileCardService {
     private PrizeSegmentDTO determineWinningSegmentFromLayout(List<PrizeSegmentDTO> layout, List<String> availablePrizes) {
         List<PrizeSegmentDTO> weightedList = new ArrayList<>();
         prizeRatio.forEach((prizeKey, ratio) -> {
-            boolean isMMLSau = "MMLSau".equals(prizeKey);
+            boolean isMMLSau = CardEnum.LUCKY.getStatus().equals(prizeKey);
             if ((!isMMLSau && availablePrizes.contains(prizeKey)) || isMMLSau) {
                 List<PrizeSegmentDTO> matchingSegments = layout.stream()
                         .filter(s -> Objects.equals(s.getValue(), isMMLSau ? null : prizeKey))
-                        .collect(Collectors.toList());
+                        .toList();
 
                 if (!matchingSegments.isEmpty()) {
                     int weight = (int) (ratio * 1000);
@@ -416,7 +415,7 @@ public class MobileCardServiceImpl implements MobileCardService {
         if (weightedList.isEmpty()) {
             List<PrizeSegmentDTO> losingSegments = layout.stream()
                     .filter(s -> s.getValue() == null)
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (!losingSegments.isEmpty()) {
                 return losingSegments.get(new Random().nextInt(losingSegments.size()));

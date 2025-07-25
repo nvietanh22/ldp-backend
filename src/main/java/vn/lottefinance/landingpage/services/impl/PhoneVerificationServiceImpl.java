@@ -3,7 +3,6 @@ package vn.lottefinance.landingpage.services.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vn.lottefinance.landingpage.client.custom.EsbWareHouseClient;
 import vn.lottefinance.landingpage.dto.card.FindPhoneAndTokenRequestDTO;

@@ -8,6 +8,8 @@ import lombok.Getter;
 public enum CardEnum {
 
     ACTIVE("ACTIVE"),
-    INACTIVE("INACTIVE");
+    INACTIVE("INACTIVE"),
+    LUCKY("MMLSau"),
+    SUCCESS("Success");
     private String status;
 }
