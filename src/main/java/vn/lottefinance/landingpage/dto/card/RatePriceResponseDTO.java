@@ -5,10 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @Data
-public class GetCardResponseDTO {
+public class RatePriceResponseDTO {
     @SerializedName("rslt_cd")
     private String rslt_cd;
 
@@ -18,7 +19,5 @@ public class GetCardResponseDTO {
     @SerializedName("reason_code")
     private String reason_code;
 
-    @SerializedName("prices")
-    private String prices;
-
+    private List<RatePriceDTO> rate_price;
 }

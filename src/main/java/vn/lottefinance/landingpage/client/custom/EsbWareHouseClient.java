@@ -15,6 +15,7 @@ import vn.lottefinance.landingpage.dto.DataDto;
 import vn.lottefinance.landingpage.dto.InviteInfo;
 import vn.lottefinance.landingpage.dto.ResponseDto;
 import vn.lottefinance.landingpage.dto.card.*;
+import vn.lottefinance.landingpage.enums.CardEnum;
 import vn.lottefinance.landingpage.enums.ChannelEnum;
 import vn.lottefinance.landingpage.enums.OtpVerifyStatusEnum;
 import vn.lottefinance.landingpage.exception.CustomedBadRequestException;
@@ -69,6 +70,12 @@ public class EsbWareHouseClient {
     @Value("${card.endpoint.getActivePriceByBrand}")
     private String getActivePriceByBrandService;
 
+    @Value("${card.endpoint.getRatePrice}")
+    private String getRatePriceService;
+
+    @Value("${card.endpoint.sendNotification}")
+    private String sendNotificationService;
+
     @Autowired
     private CacheService cacheService;
 
@@ -116,11 +123,11 @@ public class EsbWareHouseClient {
         ResponseDto responseDto = new ResponseDto();
         if (channel != ChannelEnum.LOAN7.getVal()) {
             ResponseDto idValidationResult = validateVietnameseID(dto.getIdCard());
-            if (!"Success".equals(idValidationResult.getRslt_msg())) {
+            if (!CardEnum.SUCCESS.getStatus().equals(idValidationResult.getRslt_msg())) {
                 return idValidationResult;
             }
             ResponseDto phoneValidationResult = validateVietnamesePhoneNumber(dto.getPhoneNumber());
-            if (!"Success".equals(phoneValidationResult.getRslt_msg())) {
+            if (!CardEnum.SUCCESS.getStatus().equals(phoneValidationResult.getRslt_msg())) {
                 return phoneValidationResult;
             }
         }
@@ -149,7 +156,7 @@ public class EsbWareHouseClient {
             JSONObject jsonObject = new JSONObject(respone);
             responseDto.setReason_code(jsonObject.optString("ErrorCode"));
             if (jsonObject.optString("ErrorMessage").equals("Successful")) {
-                responseDto.setRslt_msg("Success");
+                responseDto.setRslt_msg(CardEnum.SUCCESS.getStatus());
                 log.info("Start create cache: {}");
             } else {
                 responseDto.setRslt_msg(jsonObject.optString("ErrorMessage"));
@@ -194,7 +201,7 @@ public class EsbWareHouseClient {
             }
         }
 
-        responseDto.setRslt_msg("Success");
+        responseDto.setRslt_msg(CardEnum.SUCCESS.getStatus());
         responseDto.setReason_code("Hợp lệ.");
         return responseDto;
     }
@@ -222,7 +229,7 @@ public class EsbWareHouseClient {
             responseDto.setReason_code("Số điện thoại không hợp lệ.");
             return responseDto;
         }
-        responseDto.setRslt_msg("Success");
+        responseDto.setRslt_msg(CardEnum.SUCCESS.getStatus());
         responseDto.setReason_code("Hợp lệ.");
         return responseDto;
     }
@@ -318,7 +325,7 @@ public class EsbWareHouseClient {
         try (Response response = okHttpClient.newCall(request).execute()) {
             String respone = response.body().string();
             JSONObject jsonObject = new JSONObject(respone);
-            log.info("RESPONSE: {}", respone);
+            log.info("RESPONSE findPhoneToken: {}", respone);
 
             JSONObject data = jsonObject.optJSONObject("Data");
             return data != null ? data.toString() : "{}";
@@ -422,6 +429,15 @@ public class EsbWareHouseClient {
             JSONObject data = jsonObject.optJSONObject("Data");
             String prices = "";
             if (data != null && data.has("prices")) {
+                if (data.isNull("prices")) {
+                    return GetCardResponseDTO
+                            .builder()
+                            .prices("")
+                            .reason_code("1")
+                            .rslt_msg("False")
+                            .rslt_cd("f")
+                            .build();
+                }
                 prices = data.getString("prices");
             }
 
@@ -429,7 +445,7 @@ public class EsbWareHouseClient {
                     .builder()
                     .prices(prices)
                     .reason_code("0")
-                    .rslt_msg("Success")
+                    .rslt_msg(CardEnum.SUCCESS.getStatus())
                     .rslt_cd("s")
                     .build();
         } catch (IOException e) {
@@ -463,7 +479,7 @@ public class EsbWareHouseClient {
         ResponseDto responseDto = new ResponseDto();
         if (channel != ChannelEnum.LOAN7.getVal()) {
             ResponseDto phoneValidationResult = validateVietnamesePhoneNumber(dto.getPhoneNumber());
-            if (!"Success".equals(phoneValidationResult.getRslt_msg())) {
+            if (!CardEnum.SUCCESS.getStatus().equals(phoneValidationResult.getRslt_msg())) {
                 return phoneValidationResult;
             }
         }
@@ -503,4 +519,72 @@ public class EsbWareHouseClient {
         }
     }
 
+
+    public RatePriceResponseDTO getRatePrice() {
+        log.info("Start getRatePrice: {}");
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + getRatePriceService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST: {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE: {}", response);
+
+            JSONObject data = jsonObject.optJSONObject("Data");
+            return RatePriceResponseDTO
+                    .builder()
+                    .reason_code("0")
+                    .rslt_msg(CardEnum.SUCCESS.getStatus())
+                    .rslt_cd("s")
+                    .build();
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
+
+    public void sentNoti(SendNotiRequestDTO requestDTO) {
+        log.info("Start getRatePrice: {}");
+
+        ESBRequestDTO esbRequestDTO = new ESBRequestDTO();
+        esbRequestDTO.setTransId(UUID.randomUUID().toString());
+        esbRequestDTO.setData(requestDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonRequestBody;
+        try {
+            jsonRequestBody = objectMapper.writeValueAsString(esbRequestDTO);
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Error serializing DTO", e);
+        }
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), jsonRequestBody);
+        String url = cardUrl + sendNotificationService;
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        log.info("URL: {}", url);
+        log.info("REQUEST sentNoti: {}", request);
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            String respone = response.body().string();
+            JSONObject jsonObject = new JSONObject(respone);
+            log.info("RESPONSE sentNoti: {}", response);
+
+        } catch (IOException e) {
+            throw new CustomedBadRequestException("Lỗi gọi API", e);
+        }
+    }
 }

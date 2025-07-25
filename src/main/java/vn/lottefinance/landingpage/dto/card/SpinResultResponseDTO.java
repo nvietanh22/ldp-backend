@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SpinResultResponseDTO {
     private String prize;
-//    private String prizeName;
-//    private String cardNumber;
     private int targetIndex;
     private String rslt_msg;
     private String reason_code;
