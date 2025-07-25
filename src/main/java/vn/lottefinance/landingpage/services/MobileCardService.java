@@ -12,5 +12,6 @@ public interface MobileCardService {
 
     ValidateResponseDTO sendValidate(ValidateRequestDTO request, String channel) throws JsonProcessingException;
     SpinResultResponseDTO getSpinResult(SpinResultRequestDTO request);
+    WheelLayoutResponseDTO generateAndCacheLayout(String brand);
 }
 

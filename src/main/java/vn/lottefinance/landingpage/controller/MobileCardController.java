@@ -77,4 +77,10 @@ public class MobileCardController {
         return service.getSpinResult(request);
     }
 
+    @PostMapping("/generate-layout")
+    @ResponseStatus(HttpStatus.OK)
+    public WheelLayoutResponseDTO generateLayout(@RequestParam("brand") String brand) {
+        return service.generateAndCacheLayout(brand);
+    }
+
 }
